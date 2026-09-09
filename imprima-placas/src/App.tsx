@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { jsPDF } from 'jspdf';
+import { svg2pdf } from 'svg2pdf.js';
 
 const PICTOGRAMAS_DISPONIVEIS = {
   'Trânsito / Proibição': [
@@ -39,19 +41,67 @@ export default function PlacaGenerator() {
   const [tipoIcone, setTipoIcone] = useState('mdi:car-off');
   const [modoInternoEmMassa, setModoInternoEmMassa] = useState(false);
 
-  // Paleta de cores baseada nas normas
-  const estilosNorma = {
-    aviso: { bg: 'bg-amber-400', text: 'text-black', border: 'border-black', headerBg: 'bg-amber-400' },
-    perigo: { bg: 'bg-red-600', text: 'text-white', border: 'border-white', headerBg: 'bg-red-600' },
-    emergencia: { bg: 'bg-emerald-600', text: 'text-white', border: 'border-white', headerBg: 'bg-emerald-600' }
-  };
+  const placaRef = useRef<SVGSVGElement | null>(null);
 
-  const estiloAtual = estilosNorma[tipoPlaca] ?? estilosNorma.aviso;
+  const medidasPlaca = useMemo(() => {
+    const [larguraCm, alturaCm] = tamanho.split('x').map(Number);
+    const widthMm = larguraCm * 10;
+    const heightMm = alturaCm * 10;
+
+    return {
+      larguraCm,
+      alturaCm,
+      widthMm,
+      heightMm,
+      widthPx: larguraCm * 40,
+      heightPx: alturaCm * 40,
+      ratio: larguraCm / alturaCm,
+    };
+  }, [tamanho]);
+
+  const exportarParaPDF = async () => {
+    if (!placaRef.current) {
+      alert('Nenhuma placa disponível para exportação.');
+      return;
+    }
+
+    try {
+      const { widthMm, heightMm } = medidasPlaca;
+      const documento = new jsPDF({
+        unit: 'mm',
+        format: [widthMm, heightMm],
+        orientation: widthMm > heightMm ? 'landscape' : 'portrait',
+      });
+
+      await svg2pdf(placaRef.current, documento, {
+        x: 0,
+        y: 0,
+        width: widthMm,
+        height: heightMm,
+      });
+
+      const nomeArquivo = `placa-${tipoPlaca}-${tamanho.replace('x', 'x')}.pdf`;
+      documento.save(nomeArquivo);
+    } catch (error) {
+      console.error('Erro ao exportar PDF vetorial:', error);
+      alert('Não foi possível gerar o PDF vetorial. Verifique o console para detalhes.');
+    }
+  };
 
   // Função para simular a exportação em massa (Uso interno)
   const executarGeracaoEmMassa = () => {
     alert("Rotina interna disparada! Gerando catálogo completo ISO 7010 e NBR 16820 em lote (PDFs vetorizados)...");
   };
+
+  const linhasCorpo = (corpo || 'Texto principal da sinalização')
+    .split('\n')
+    .map((linha) => linha.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const plateFill = tipoPlaca === 'aviso' ? '#fbbf24' : tipoPlaca === 'perigo' ? '#dc2626' : '#059669';
+  const plateText = tipoPlaca === 'aviso' ? '#111111' : '#ffffff';
+  const plateStroke = '#111111';
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-6 flex flex-col items-center">
@@ -182,7 +232,11 @@ export default function PlacaGenerator() {
 
           {/* Botões de Ação */}
           <div className="mt-6 flex flex-col gap-3">
-            <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md text-sm">
+            <button
+              type="button"
+              onClick={exportarParaPDF}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md text-sm"
+            >
               Gerar PDF Vetorial (Pronto)
             </button>
 
@@ -200,32 +254,97 @@ export default function PlacaGenerator() {
         {/* Preview Visual da Placa (Renderização Real com Tailwind) */}
         <div className="lg:col-span-2 bg-gray-950 p-8 rounded-2xl border border-gray-800 flex flex-col items-center justify-center relative shadow-inner">
           <span className="absolute top-4 left-4 text-xs font-mono text-gray-500">Preview em Tempo Real [{tamanho}cm]</span>
-          
-          {/* Caixa simulando a Placa Física */}
-          <div className={`w-full max-w-md aspect-[4/3] ${estiloAtual.bg} ${estiloAtual.text} border-4 ${estiloAtual.border} rounded-xl p-6 flex flex-col justify-between shadow-2xl transition-all font-sans`}>
-            
-            {/* Cabeçalho da Placa */}
-            <div className="text-center border-b-2 border-current pb-2">
-              <h3 className="text-2xl font-black tracking-wider uppercase">{cabecalho || 'CABEÇALHO'}</h3>
-            </div>
 
-            {/* Conteúdo Central (Texto + Pictograma Opcional) */}
-            <div className="flex items-center justify-center gap-4 my-auto py-2">
+          <svg
+            ref={placaRef}
+            viewBox={`0 0 ${medidasPlaca.widthPx} ${medidasPlaca.heightPx}`}
+            width={medidasPlaca.widthPx}
+            height={medidasPlaca.heightPx}
+            className="w-full max-w-md h-auto shadow-2xl transition-all"
+            role="img"
+            aria-label={`Placa ${cabecalho || 'CABEÇALHO'}`}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <rect
+              x="0"
+              y="0"
+              width={medidasPlaca.widthPx}
+              height={medidasPlaca.heightPx}
+              rx={medidasPlaca.widthPx * 0.06}
+              fill={plateFill}
+              stroke={plateStroke}
+              strokeWidth={Math.max(4, medidasPlaca.widthPx * 0.02)}
+            />
+
+            <rect
+              x={medidasPlaca.widthPx * 0.08}
+              y={medidasPlaca.heightPx * 0.08}
+              width={medidasPlaca.widthPx * 0.84}
+              height={medidasPlaca.heightPx * 0.18}
+              fill="none"
+              stroke={plateText}
+              strokeWidth={Math.max(2, medidasPlaca.widthPx * 0.008)}
+            />
+
+            <text
+              x={medidasPlaca.widthPx / 2}
+              y={medidasPlaca.heightPx * 0.17}
+              textAnchor="middle"
+              fill={plateText}
+              fontSize={Math.max(18, medidasPlaca.widthPx * 0.08)}
+              fontWeight="900"
+              letterSpacing="0.12em"
+              style={{ fontFamily: 'Arial, sans-serif' }}
+            >
+              {(cabecalho || 'CABEÇALHO').toUpperCase()}
+            </text>
+
+            <g transform={`translate(${medidasPlaca.widthPx * 0.5}, ${medidasPlaca.heightPx * 0.5})`}>
               {possuiIcone && (
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-current bg-white/5">
-                  <Icon icon={tipoIcone} className="h-10 w-10" />
-                </div>
+                <g transform={`translate(${-medidasPlaca.widthPx * 0.18}, ${-medidasPlaca.heightPx * 0.12})`}>
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={Math.max(22, medidasPlaca.widthPx * 0.11)}
+                    fill="rgba(255,255,255,0.06)"
+                    stroke={plateText}
+                    strokeWidth={Math.max(2, medidasPlaca.widthPx * 0.008)}
+                  />
+                  <g transform={`translate(${-medidasPlaca.widthPx * 0.05}, ${-medidasPlaca.heightPx * 0.06})`}>
+                    <Icon icon={tipoIcone} width={Math.max(34, medidasPlaca.widthPx * 0.12)} height={Math.max(34, medidasPlaca.widthPx * 0.12)} color={plateText} />
+                  </g>
+                </g>
               )}
-              <div className="text-center font-bold text-base leading-tight whitespace-pre-line uppercase">
-                {corpo || 'Texto principal da sinalização'}
-              </div>
-            </div>
 
-            {/* Rodapé técnico discreto simulado */}
-            <div className="text-[10px] opacity-70 text-center uppercase tracking-widest font-mono">
-              Imprima Cooper • Padrão Técnico
-            </div>
-          </div>
+              {linhasCorpo.map((linha, index) => (
+                <text
+                  key={`${linha}-${index}`}
+                  x={possuiIcone ? medidasPlaca.widthPx * 0.18 : 0}
+                  y={index * (Math.max(18, medidasPlaca.heightPx * 0.08)) + (possuiIcone ? medidasPlaca.heightPx * 0.1 : 0)}
+                  fill={plateText}
+                  textAnchor="middle"
+                  fontSize={Math.max(16, medidasPlaca.widthPx * 0.055)}
+                  fontWeight="800"
+                  style={{ fontFamily: 'Arial, sans-serif' }}
+                >
+                  {linha.toUpperCase()}
+                </text>
+              ))}
+            </g>
+
+            <text
+              x={medidasPlaca.widthPx / 2}
+              y={medidasPlaca.heightPx * 0.9}
+              textAnchor="middle"
+              fill={plateText}
+              opacity="0.8"
+              fontSize={Math.max(8, medidasPlaca.widthPx * 0.024)}
+              letterSpacing="0.18em"
+              style={{ fontFamily: 'Arial, sans-serif' }}
+            >
+              IMPRIMA COOPER • PADRÃO TÉCNICO
+            </text>
+          </svg>
 
           <p className="mt-6 text-xs text-gray-500 text-center">
             * O motor gera os vetores utilizando a fonte Inter com espaçamento e raios matematicamente corrigidos para corte a laser/plotter.
