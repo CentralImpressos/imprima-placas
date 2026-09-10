@@ -19,30 +19,37 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const width = size.widthMm;
     const height = size.heightMm;
     const plateCenterX = width / 2;
+    const BASE_WIDTH = 200;
+    const BASE_CIRCLE_RADIUS = 66;
+    const BASE_CIRCLE_STROKE = 12;
+    const BASE_ICON_SCALE = 4.62;
+    const BASE_FONT_SIZE = 30;
+    const BASE_CIRCLE_CENTER_Y = 107;
+    const BASE_HEADING_Y = 202;
+    const BASE_MESSAGE_Y = 246;
+
+    const scale = width / BASE_WIDTH;
 
     const outerMargin = 5;
     const outerBorderWidth = 2.5;
     const borderRadius = 5;
 
-    const circleDiameter = Math.min(width * 0.66, height * 0.57);
-    const circleRadius = circleDiameter / 2;
+    const circleRadius = BASE_CIRCLE_RADIUS * scale;
     const circleCenterX = plateCenterX;
-    const baseCircleCenterY = height * 0.33;
-    const contentOffsetY = 8;
-    const circleCenterY = baseCircleCenterY + contentOffsetY;
-    const circleStroke = 12;
+    const circleCenterY = BASE_CIRCLE_CENTER_Y * scale;
+    const circleStroke = BASE_CIRCLE_STROKE * scale;
 
     const slashStroke = circleStroke;
     const slashLength = 2 * Math.sqrt(circleRadius ** 2 - (slashStroke / 2) ** 2);
-    const iconScale = (circleDiameter * 0.84) / 24;
-    const labelFontSize = 30;
-    const messageFontSize = 30;
+    const iconScale = BASE_ICON_SCALE * scale;
+    const labelFontSize = BASE_FONT_SIZE * scale;
+    const messageFontSize = BASE_FONT_SIZE * scale;
 
     const headingText = (values.heading || 'PROIBIDO').toUpperCase();
     const messageText = (values.message || 'FUMAR').toUpperCase();
 
-    const headingY = 194 + contentOffsetY;
-    const messageY = 238 + contentOffsetY;
+    const headingY = BASE_HEADING_Y * scale;
+    const messageY = BASE_MESSAGE_Y * scale;
 
     const elements: GraphicElement[] = [
       {
@@ -92,7 +99,7 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
         x: circleCenterX,
         y: circleCenterY,
         scale: iconScale,
-        color: '#4D4D4D',
+        color: '#000000',
         svg: values.iconSvg,
       });
     }
