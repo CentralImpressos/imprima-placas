@@ -17,35 +17,32 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const height = geometry?.height ?? size.heightMm;
     const plateCenterX = width / 2;
 
-    // Todas as medidas abaixo estão em mm. A composição é calculada como um
-    // único bloco (círculo + respiro + texto), que depois é centralizado na
-    // área útil da placa. Isso evita que o conteúdo fique "puxado" para cima.
-    const BASE_WIDTH = 200;
-    const BASE_CIRCLE_RADIUS = 66;
-    const BASE_CIRCLE_STROKE = 12;
-    const BASE_ICON_SCALE = 4.62;
-    const scale = width / BASE_WIDTH;
-
-    const outerMargin = Math.max(4, 5 * scale);
-    const outerBorderWidth = Math.max(2, 2.5 * scale);
-    const borderRadius = Math.max(4, 5 * scale);
+    // A moldura define uma área segura. Todo o conteúdo (símbolo + texto)
+    // é tratado como um único bloco e nunca pode ultrapassar essa área.
+    const outerMargin = Math.max(4, Math.min(5, width * 0.025));
+    const outerBorderWidth = Math.max(2, Math.min(2.5, width * 0.0125));
+    const borderRadius = Math.max(4, Math.min(5, width * 0.025));
 
     const innerLeft = outerMargin + outerBorderWidth;
     const innerRight = width - outerMargin - outerBorderWidth;
     const innerTop = outerMargin + outerBorderWidth;
     const innerBottom = height - outerMargin - outerBorderWidth;
-    const innerWidth = innerRight - innerLeft;
-    const innerHeight = innerBottom - innerTop;
+    const innerWidth = Math.max(1, innerRight - innerLeft);
+    const innerHeight = Math.max(1, innerBottom - innerTop);
 
-    const circleRadius = Math.min(
-      BASE_CIRCLE_RADIUS * scale,
-      innerWidth * 0.36,
-      innerHeight * 0.32,
-    );
-    const circleStroke = Math.min(BASE_CIRCLE_STROKE * scale, circleRadius * 0.18);
-    const slashStroke = circleStroke;
-    const slashLength = 2 * Math.sqrt(Math.max(0, circleRadius ** 2 - (slashStroke / 2) ** 2));
-    const iconScale = BASE_ICON_SCALE * (circleRadius / BASE_CIRCLE_RADIUS);
+    // Respiro mínimo entre a moldura e qualquer elemento do conteúdo.
+    // O bloco usa uma margem interna proporcional, mas nunca excessiva.
+    const safePadding = Math.max(7, Math.min(10, Math.min(width, height) * 0.045));
+    const safeWidth = Math.max(1, innerWidth - safePadding * 2);
+    const safeHeight = Math.max(1, innerHeight - safePadding * 2);
+
+    const BASE_CIRCLE_RADIUS = 66;
+    const BASE_CIRCLE_STROKE = 12;
+    const BASE_ICON_SCALE = 4.62;
+    const BASE_FONT_SIZE = 30;
+    const BASE_LINE_HEIGHT = 31.2;
+    const BASE_CONTENT_GAP = 14;
+    const BASE_GLYPH_WIDTH_FACTOR = 0.52;
 
     const heading = values.heading?.trim().toUpperCase() || 'PROIBIDO';
     const message = values.message?.trim() || 'FUMAR';
@@ -60,35 +57,44 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const safeLines = messageLines.length > 0 ? messageLines : ['FUMAR'];
     const textLines = safeLines[0] === heading ? safeLines : [heading, ...safeLines];
 
-    // Respiro proposital entre o símbolo e o texto. Ele cresce de forma
-    // proporcional, mas nunca fica pequeno demais em placas menores.
-    const contentGap = Math.max(7, 14 * scale);
-    const textHorizontalPadding = Math.max(6, 8 * scale);
-    const maxTextWidth = Math.max(1, innerWidth - textHorizontalPadding * 2);
+    // Primeiro calculamos o bloco em uma escala base.
+    // Depois aplicamos UMA escala global ao bloco inteiro. Assim, círculo,
+    // pictograma, barra, gap e texto crescem/reduzem juntos.
+    const circleStrokeBase = BASE_CIRCLE_STROKE;
+    const circleOuterDiameterBase = BASE_CIRCLE_RADIUS * 2 + circleStrokeBase;
+    const longestLineLength = Math.max(1, ...textLines.map((line) => line.length));
+    const textWidthBase = longestLineLength * BASE_FONT_SIZE * BASE_GLYPH_WIDTH_FACTOR;
+    const contentWidthBase = Math.max(circleOuterDiameterBase, textWidthBase);
+    const textHeightBase = textLines.length * BASE_LINE_HEIGHT;
+    const contentHeightBase = circleOuterDiameterBase + BASE_CONTENT_GAP + textHeightBase;
 
-    // Estimativa conservadora da largura dos glifos do Barlow Semi Condensed.
-    // O objetivo é ocupar a maior largura possível sem tocar a moldura.
-    const glyphWidthFactor = 0.52;
-    const maxFontByWidth = Math.min(
-      0.24 * width,
-      maxTextWidth / Math.max(1, ...textLines.map((line) => line.length)) / glyphWidthFactor,
+    // Escala máxima que mantém TODO o bloco dentro da área segura.
+    const fitScale = Math.min(
+      safeWidth / contentWidthBase,
+      safeHeight / contentHeightBase,
     );
 
-    // O bloco inteiro precisa caber verticalmente. Primeiro calculamos o
-    // tamanho máximo de fonte considerando o círculo, o gap e todas as linhas.
-    const lineHeightFactor = 1.04;
-    const availableTextHeight = Math.max(1, innerHeight - circleRadius * 2 - contentGap);
-    const maxFontByHeight = availableTextHeight / Math.max(1, textLines.length * lineHeightFactor);
-    const fontSize = Math.max(8, Math.min(maxFontByWidth, maxFontByHeight));
-    const lineHeight = fontSize * lineHeightFactor;
+    const contentScale = Math.max(0.35, fitScale);
+    const circleRadius = BASE_CIRCLE_RADIUS * contentScale;
+    const circleStroke = Math.max(1.5, circleStrokeBase * contentScale);
+    const slashStroke = circleStroke;
+    const circleOuterDiameter = circleRadius * 2 + circleStroke;
+    const contentGap = BASE_CONTENT_GAP * contentScale;
+    const fontSize = Math.max(8, BASE_FONT_SIZE * contentScale);
+    const lineHeight = Math.max(fontSize * 1.04, BASE_LINE_HEIGHT * contentScale);
     const textBlockHeight = textLines.length * lineHeight;
 
-    // O grupo visual completo é centralizado dentro da área útil da placa.
-    const contentBlockHeight = circleRadius * 2 + contentGap + textBlockHeight;
-    const contentTop = innerTop + Math.max(0, (innerHeight - contentBlockHeight) / 2);
-    const circleCenterY = contentTop + circleRadius;
-    const textAreaTop = circleCenterY + circleRadius + contentGap;
+    // O bloco final é centralizado na área segura, não apenas o texto.
+    const contentBlockHeight = circleOuterDiameter + contentGap + textBlockHeight;
+    const contentTop = innerTop + safePadding + Math.max(0, (safeHeight - contentBlockHeight) / 2);
+    const circleCenterY = contentTop + circleOuterDiameter / 2;
+    const textAreaTop = contentTop + circleOuterDiameter + contentGap;
     const textCenterY = textAreaTop + textBlockHeight / 2;
+
+    // O círculo é o elemento que define o eixo visual do símbolo.
+    // O pictograma acompanha exatamente o mesmo centro e escala.
+    const iconScale = BASE_ICON_SCALE * contentScale;
+    const slashLength = circleRadius * 2;
 
     const elements: GraphicElement[] = [
       {
