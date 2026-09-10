@@ -31,7 +31,6 @@ export default function PlacaGenerator() {
   const tipoIcone = typeof resolvedSign.values.icon === 'string' ? resolvedSign.values.icon : 'mdi:alert';
 
   const tamanhoSelecionado = resolvedSign.size;
-
   const template = resolvedSign.template;
 
   const handleUpdateSignValue = (field: string, value: string | boolean) => {
@@ -205,7 +204,7 @@ export default function PlacaGenerator() {
           </div>
 
           <div className="preview-surface">
-            <div className="svg-stage" dangerouslySetInnerHTML={{ __html: svgMarkup }} />
+            <div ref={placaRef} className="svg-stage" dangerouslySetInnerHTML={{ __html: svgMarkup }} />
           </div>
           <p className="preview-caption">SVG vetorial renderizado com dimensões físicas em milímetros.</p>
         </section>
