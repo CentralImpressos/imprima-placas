@@ -42,29 +42,25 @@ export default function PlacaGenerator() {
     switch (fieldId) {
       case 'heading':
         return (
-          <div key={fieldId}>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-              Texto do Cabeçalho
-            </label>
+          <div key={fieldId} className="field-group">
+            <label className="field-label">Texto do Cabeçalho</label>
             <input
               type="text"
               value={cabecalho}
               onChange={(event) => handleUpdateSignValue('heading', event.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+              className="field-input"
             />
           </div>
         );
       case 'message':
         return (
-          <div key={fieldId}>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-              Texto Principal (Corpo)
-            </label>
+          <div key={fieldId} className="field-group">
+            <label className="field-label">Texto Principal (Corpo)</label>
             <textarea
               rows={3}
               value={corpo}
               onChange={(event) => handleUpdateSignValue('message', event.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"
+              className="field-textarea"
             />
           </div>
         );

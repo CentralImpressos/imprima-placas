@@ -35,11 +35,9 @@ export function TemplateSelector({ selectedTemplateId, onSelectTemplate }: Templ
   const availableTemplates: TemplateDefinition[] = activeCategory?.templates ?? TEMPLATE_DEFINITIONS;
 
   return (
-    <div className="space-y-3">
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-          Categoria
-        </label>
+    <div className="template-selector">
+      <div className="field-group">
+        <label className="field-label">Categoria</label>
         <select
           value={selectedCategoryId}
           onChange={(event) => {
@@ -50,7 +48,7 @@ export function TemplateSelector({ selectedTemplateId, onSelectTemplate }: Templ
               onSelectTemplate(nextTemplate.id as PlateTemplateId);
             }
           }}
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+          className="field-select"
         >
           {categoryOptions.map((category) => (
             <option key={category.id} value={category.id}>
@@ -60,14 +58,12 @@ export function TemplateSelector({ selectedTemplateId, onSelectTemplate }: Templ
         </select>
       </div>
 
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-          Template
-        </label>
+      <div className="field-group">
+        <label className="field-label">Template</label>
         <select
           value={selectedTemplateId}
           onChange={(event) => onSelectTemplate(event.target.value as PlateTemplateId)}
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+          className="field-select"
         >
           {availableTemplates.map((template) => (
             <option key={template.id} value={template.id}>

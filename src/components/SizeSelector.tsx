@@ -7,21 +7,21 @@ type SizeSelectorProps = {
 
 export function SizeSelector({ value, onChange }: SizeSelectorProps) {
   return (
-    <div>
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-        Dimensão Comercial
-      </label>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
-      >
+    <div className="size-selector">
+      <label className="field-label">Dimensão Comercial</label>
+      <div className="size-grid">
         {PLATE_SIZES.map((size) => (
-          <option key={size.id} value={size.id}>
-            {size.name}
-          </option>
+          <button
+            key={size.id}
+            type="button"
+            onClick={() => onChange(size.id)}
+            className={`size-card ${value === size.id ? 'is-selected' : ''}`}
+          >
+            <span className="size-card__label">{size.name}</span>
+            <span className="size-card__meta">{size.shape ?? 'Retangular'}</span>
+          </button>
         ))}
-      </select>
+      </div>
     </div>
   );
 }
