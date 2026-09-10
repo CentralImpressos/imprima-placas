@@ -13,32 +13,39 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     { id: 'showIcon', label: 'Mostrar pictograma', type: 'toggle' },
   ],
   render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateRenderGeometry): Composition => {
-    void geometry;
-
-    const width = size.widthMm;
-    const height = size.heightMm;
+    const width = geometry?.width ?? size.widthMm;
+    const height = geometry?.height ?? size.heightMm;
     const plateCenterX = width / 2;
+
+    // Todas as medidas abaixo estão em mm. A composição é calculada como um
+    // único bloco (círculo + respiro + texto), que depois é centralizado na
+    // área útil da placa. Isso evita que o conteúdo fique "puxado" para cima.
     const BASE_WIDTH = 200;
     const BASE_CIRCLE_RADIUS = 66;
     const BASE_CIRCLE_STROKE = 12;
     const BASE_ICON_SCALE = 4.62;
-    const BASE_FONT_SIZE = 30;
-    const BASE_CIRCLE_CENTER_Y = 82;
-    const BASE_TEXT_GAP = 8;
-    const BASE_TEXT_LINE_HEIGHT = 28;
-
     const scale = width / BASE_WIDTH;
 
-    const outerMargin = 5;
-    const outerBorderWidth = 2.5;
-    const borderRadius = 5;
+    const outerMargin = Math.max(4, 5 * scale);
+    const outerBorderWidth = Math.max(2, 2.5 * scale);
+    const borderRadius = Math.max(4, 5 * scale);
 
-    const circleRadius = BASE_CIRCLE_RADIUS * scale;
-    const circleCenterY = BASE_CIRCLE_CENTER_Y * scale;
-    const circleStroke = BASE_CIRCLE_STROKE * scale;
+    const innerLeft = outerMargin + outerBorderWidth;
+    const innerRight = width - outerMargin - outerBorderWidth;
+    const innerTop = outerMargin + outerBorderWidth;
+    const innerBottom = height - outerMargin - outerBorderWidth;
+    const innerWidth = innerRight - innerLeft;
+    const innerHeight = innerBottom - innerTop;
+
+    const circleRadius = Math.min(
+      BASE_CIRCLE_RADIUS * scale,
+      innerWidth * 0.36,
+      innerHeight * 0.32,
+    );
+    const circleStroke = Math.min(BASE_CIRCLE_STROKE * scale, circleRadius * 0.18);
     const slashStroke = circleStroke;
-    const slashLength = 2 * Math.sqrt(circleRadius ** 2 - (slashStroke / 2) ** 2);
-    const iconScale = BASE_ICON_SCALE * scale;
+    const slashLength = 2 * Math.sqrt(Math.max(0, circleRadius ** 2 - (slashStroke / 2) ** 2));
+    const iconScale = BASE_ICON_SCALE * (circleRadius / BASE_CIRCLE_RADIUS);
 
     const heading = values.heading?.trim().toUpperCase() || 'PROIBIDO';
     const message = values.message?.trim() || 'FUMAR';
@@ -48,32 +55,39 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       .filter(Boolean)
       .map((line) => line.toUpperCase());
 
-    // O título é parte fixa da composição. Evita duplicá-lo se já estiver
-    // presente como primeira linha do texto digitado.
+    // O título é parte fixa da composição. Evita duplicá-lo se o usuário já
+    // digitou "PROIBIDO" como primeira linha.
     const safeLines = messageLines.length > 0 ? messageLines : ['FUMAR'];
     const textLines = safeLines[0] === heading ? safeLines : [heading, ...safeLines];
 
-    const innerLeft = outerMargin + outerBorderWidth;
-    const innerRight = width - outerMargin - outerBorderWidth;
-    const innerBottom = height - outerMargin - outerBorderWidth;
-    const maxTextWidth = Math.max(1, innerRight - innerLeft - 8 * scale);
+    // Respiro proposital entre o símbolo e o texto. Ele cresce de forma
+    // proporcional, mas nunca fica pequeno demais em placas menores.
+    const contentGap = Math.max(7, 14 * scale);
+    const textHorizontalPadding = Math.max(6, 8 * scale);
+    const maxTextWidth = Math.max(1, innerWidth - textHorizontalPadding * 2);
 
-    const circleBottom = circleCenterY + circleRadius + circleStroke / 2;
-    const textGap = BASE_TEXT_GAP * scale;
-    const textAreaTop = circleBottom + textGap;
-    const textAreaBottom = innerBottom;
-    const availableTextHeight = Math.max(1, textAreaBottom - textAreaTop);
+    // Estimativa conservadora da largura dos glifos do Barlow Semi Condensed.
+    // O objetivo é ocupar a maior largura possível sem tocar a moldura.
+    const glyphWidthFactor = 0.52;
+    const maxFontByWidth = Math.min(
+      0.24 * width,
+      maxTextWidth / Math.max(1, ...textLines.map((line) => line.length)) / glyphWidthFactor,
+    );
 
-    const longestLineLength = Math.max(...textLines.map((line) => line.length));
-    const widthScale = longestLineLength > 0
-      ? Math.min(1, maxTextWidth / (longestLineLength * BASE_FONT_SIZE * 0.56 * scale))
-      : 1;
-    const heightScale = availableTextHeight / (textLines.length * BASE_TEXT_LINE_HEIGHT * scale);
-    const textScale = Math.min(1, widthScale, heightScale);
-
-    const fontSize = BASE_FONT_SIZE * scale * textScale;
-    const lineHeight = BASE_TEXT_LINE_HEIGHT * scale * textScale;
+    // O bloco inteiro precisa caber verticalmente. Primeiro calculamos o
+    // tamanho máximo de fonte considerando o círculo, o gap e todas as linhas.
+    const lineHeightFactor = 1.04;
+    const availableTextHeight = Math.max(1, innerHeight - circleRadius * 2 - contentGap);
+    const maxFontByHeight = availableTextHeight / Math.max(1, textLines.length * lineHeightFactor);
+    const fontSize = Math.max(8, Math.min(maxFontByWidth, maxFontByHeight));
+    const lineHeight = fontSize * lineHeightFactor;
     const textBlockHeight = textLines.length * lineHeight;
+
+    // O grupo visual completo é centralizado dentro da área útil da placa.
+    const contentBlockHeight = circleRadius * 2 + contentGap + textBlockHeight;
+    const contentTop = innerTop + Math.max(0, (innerHeight - contentBlockHeight) / 2);
+    const circleCenterY = contentTop + circleRadius;
+    const textAreaTop = circleCenterY + circleRadius + contentGap;
     const textCenterY = textAreaTop + textBlockHeight / 2;
 
     const elements: GraphicElement[] = [
