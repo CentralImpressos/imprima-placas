@@ -8,8 +8,7 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
   description: 'Placa circular de proibição com pictograma de fumar e risco diagonal separado.',
   sizes: ['10x15', '15x21', '20x30', '30x40', '30x50', '40x60', '50x70', '60x80'],
   fields: [
-    { id: 'heading', label: 'Título', type: 'text', placeholder: 'PROIBIDO' },
-    { id: 'message', label: 'Mensagem', type: 'textarea', placeholder: 'FUMAR' },
+    { id: 'message', label: 'Texto da placa', type: 'textarea', placeholder: 'PROIBIDO\nFUMAR' },
     { id: 'icon', label: 'Pictograma', type: 'select', placeholder: 'mdi:smoking' },
     { id: 'showIcon', label: 'Mostrar pictograma', type: 'toggle' },
   ],
@@ -25,8 +24,8 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const BASE_ICON_SCALE = 4.62;
     const BASE_FONT_SIZE = 30;
     const BASE_CIRCLE_CENTER_Y = 107;
-    const BASE_HEADING_Y = 202;
-    const BASE_MESSAGE_Y = 246;
+    const BASE_TEXT_CENTER_Y = 224;
+    const BASE_TEXT_LINE_HEIGHT = 28;
 
     const scale = width / BASE_WIDTH;
 
@@ -40,34 +39,36 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const slashStroke = circleStroke;
     const slashLength = 2 * Math.sqrt(circleRadius ** 2 - (slashStroke / 2) ** 2);
     const iconScale = BASE_ICON_SCALE * scale;
-    const labelFontSize = BASE_FONT_SIZE * scale;
-    const messageFontSize = BASE_FONT_SIZE * scale;
+    const fontSize = BASE_FONT_SIZE * scale;
+    const lineHeight = BASE_TEXT_LINE_HEIGHT * scale;
 
-    const headingOffset = (BASE_HEADING_Y - BASE_CIRCLE_CENTER_Y) * scale;
-    const messageOffset = (BASE_MESSAGE_Y - BASE_CIRCLE_CENTER_Y) * scale;
     const circleCenterYLocal = 0;
-    const headingYLocal = headingOffset;
-    const messageYLocal = messageOffset;
+    const textCenterYLocal = (BASE_TEXT_CENTER_Y - BASE_CIRCLE_CENTER_Y) * scale;
+    const rawText = values.message?.trim() || [values.heading, 'FUMAR'].filter(Boolean).join('\n');
+    const textLines = rawText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => line.toUpperCase());
+    const safeLines = textLines.length > 0 ? textLines : ['PROIBIDO', 'FUMAR'];
+    const textBlockHeight = safeLines.length * lineHeight;
+    const textTop = textCenterYLocal - textBlockHeight / 2;
+    const textBottom = textCenterYLocal + textBlockHeight / 2;
+
     const blockTop = Math.min(
       circleCenterYLocal - circleRadius - circleStroke / 2,
-      headingYLocal - labelFontSize / 2,
-      messageYLocal - messageFontSize / 2,
+      textTop,
     );
     const blockBottom = Math.max(
       circleCenterYLocal + circleRadius + circleStroke / 2,
-      headingYLocal + labelFontSize / 2,
-      messageYLocal + messageFontSize / 2,
+      textBottom,
     );
     const blockHeight = blockBottom - blockTop;
     const plateCenterY = height / 2;
     const blockOffsetY = plateCenterY - (blockTop + blockHeight / 2);
 
     const circleCenterY = circleCenterYLocal + blockOffsetY;
-    const headingY = headingYLocal + blockOffsetY;
-    const messageY = messageYLocal + blockOffsetY;
-
-    const headingText = (values.heading || 'PROIBIDO').toUpperCase();
-    const messageText = (values.message || 'FUMAR').toUpperCase();
+    const textCenterY = textCenterYLocal + blockOffsetY;
 
     const elements: GraphicElement[] = [
       {
@@ -137,34 +138,22 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       ],
     });
 
-    elements.push(
-      {
+    safeLines.forEach((line, index) => {
+      const y = textCenterY + (index - (safeLines.length - 1) / 2) * lineHeight;
+      elements.push({
         type: 'text',
         x: plateCenterX,
-        y: headingY,
-        text: headingText,
-        fontSize: labelFontSize,
+        y,
+        text: line,
+        fontSize,
         fontWeight: 800,
         fill: '#000000',
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         anchor: 'middle',
         dominantBaseline: 'middle',
         letterSpacing: 0,
-      },
-      {
-        type: 'text',
-        x: plateCenterX,
-        y: messageY,
-        text: messageText,
-        fontSize: messageFontSize,
-        fontWeight: 800,
-        fill: '#000000',
-        fontFamily: 'Barlow Semi Condensed, sans-serif',
-        anchor: 'middle',
-        dominantBaseline: 'middle',
-        letterSpacing: 0,
-      },
-    );
+      });
+    });
 
     return {
       widthMm: width,
