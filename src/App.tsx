@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createSignInstance } from './data/signs';
+import { createSignInstance } from './domain/sign/instance';
 import { IconSelector } from './components/IconSelector';
 import { Preview } from './components/Preview';
 import { SizeSelector } from './components/SizeSelector';
@@ -8,7 +8,8 @@ import { exportPdfFromSvg } from './export/pdf';
 import { exportSvgFile } from './export/svg';
 import { renderIcon } from './renderer/renderIcon';
 import { renderTemplate } from './renderer/renderTemplate';
-import { resolveSignInstance, resolveTemplateSelection, setSignSize, updateSignValue } from './signs/resolveSignInstance';
+import { setSignSize, setSignTemplate, updateSignValue } from './domain/sign/instance';
+import { resolveSignInstance } from './signs/resolveSignInstance';
 import type { PlateFieldValues, PlateTemplateId, SignInstance } from './types';
 
 const DEFAULT_TEMPLATE_ID: PlateTemplateId = 'aviso-azul-01';
@@ -148,7 +149,7 @@ export default function PlacaGenerator() {
           <TemplateSelector
             selectedTemplateId={templateId}
             onSelectTemplate={(nextTemplateId) => {
-              setSignInstance((current) => resolveTemplateSelection(current, nextTemplateId));
+              setSignInstance((current) => setSignTemplate(current, nextTemplateId));
             }}
           />
 

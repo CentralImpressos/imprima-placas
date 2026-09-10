@@ -1,5 +1,5 @@
 import { PLATE_SIZES } from '../data/sizes';
-import { getSignDefinitionById, getSignDefinitionByTemplateId, createSignInstance } from '../data/signs';
+import { getSignDefinitionById } from '../data/signs';
 import { getTemplateById } from '../data/templates';
 import type { PlateFieldValues, PlateSize, PlateTemplateId, SignDefinition, SignInstance, TemplateDefinition } from '../types';
 
@@ -37,28 +37,3 @@ export function resolveSignInstance(instance: SignInstance): ResolvedSign {
   };
 }
 
-export function resolveTemplateSelection(currentInstance: SignInstance, nextTemplateId: string): SignInstance {
-  const nextDefinition = getSignDefinitionByTemplateId(nextTemplateId);
-
-  return createSignInstance(nextDefinition.id, currentInstance.sizeId, {
-    ...currentInstance.values,
-    ...nextDefinition.defaultValues,
-  });
-}
-
-export function updateSignValue(currentInstance: SignInstance, fieldId: string, value: string | boolean): SignInstance {
-  return {
-    ...currentInstance,
-    values: {
-      ...currentInstance.values,
-      [fieldId]: value,
-    },
-  };
-}
-
-export function setSignSize(currentInstance: SignInstance, sizeId: string): SignInstance {
-  return {
-    ...currentInstance,
-    sizeId,
-  };
-}

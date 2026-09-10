@@ -19,6 +19,7 @@ export interface TextElement extends BaseGraphicElement {
   fontWeight?: number | string;
   fill?: string;
   anchor?: 'start' | 'middle' | 'end';
+  dominantBaseline?: 'alphabetic' | 'middle' | 'central' | 'hanging' | 'ideographic' | 'text-before-edge' | 'text-after-edge';
   letterSpacing?: number;
 }
 
@@ -31,6 +32,8 @@ export interface RectElement extends BaseGraphicElement {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
+  rx?: number;
+  ry?: number;
 }
 
 export interface CircleElement extends BaseGraphicElement {
@@ -50,6 +53,7 @@ export interface IconElement extends BaseGraphicElement {
   scale?: number;
   width?: number;
   height?: number;
+  color?: string;
   svg: string;
 }
 

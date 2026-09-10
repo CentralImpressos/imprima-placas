@@ -15,7 +15,9 @@ function renderGraphicElement(element: GraphicElement): string {
       const fill = element.fill ? ` fill="${element.fill}"` : '';
       const stroke = element.stroke ? ` stroke="${element.stroke}"` : '';
       const strokeWidth = element.strokeWidth !== undefined ? ` stroke-width="${element.strokeWidth}"` : '';
-      return `<rect x="${element.x}" y="${element.y}" width="${element.width}" height="${element.height}"${fill}${stroke}${strokeWidth}/>`;
+      const rx = element.rx !== undefined ? ` rx="${element.rx}"` : '';
+      const ry = element.ry !== undefined ? ` ry="${element.ry}"` : '';
+      return `<rect x="${element.x}" y="${element.y}" width="${element.width}" height="${element.height}"${fill}${stroke}${strokeWidth}${rx}${ry}/>`;
     }
     case 'circle': {
       const fill = element.fill ? ` fill="${element.fill}"` : '';
@@ -28,12 +30,15 @@ function renderGraphicElement(element: GraphicElement): string {
       const fontWeight = element.fontWeight !== undefined ? ` font-weight="${element.fontWeight}"` : '';
       const fill = element.fill ? ` fill="${element.fill}"` : '';
       const anchor = element.anchor ? ` text-anchor="${element.anchor}"` : '';
+      const dominantBaseline = element.dominantBaseline ? ` dominant-baseline="${element.dominantBaseline}"` : '';
       const letterSpacing = element.letterSpacing !== undefined ? ` letter-spacing="${element.letterSpacing}"` : '';
-      return `<text x="${element.x}" y="${element.y}" font-size="${element.fontSize}"${fontFamily}${fontWeight}${fill}${anchor}${letterSpacing}>${escapeXml(element.text)}</text>`;
+      return `<text x="${element.x}" y="${element.y}" font-size="${element.fontSize}"${fontFamily}${fontWeight}${fill}${anchor}${dominantBaseline}${letterSpacing}>${escapeXml(element.text)}</text>`;
     }
     case 'icon': {
-      const transform = `translate(${element.x} ${element.y})${element.scale !== undefined ? ` scale(${element.scale})` : ''}`;
-      return `<g transform="${transform}">${element.svg}</g>`;
+      const scale = element.scale ?? 1;
+      const color = element.color ? ` color="${element.color}"` : '';
+      const transform = `translate(${element.x} ${element.y}) scale(${scale}) translate(-12 -12)`;
+      return `<g transform="${transform}"${color}>${element.svg}</g>`;
     }
     case 'group': {
       const transform = element.transform ? ` transform="${element.transform}"` : '';

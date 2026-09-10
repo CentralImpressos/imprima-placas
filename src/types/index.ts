@@ -39,7 +39,7 @@ export type PlateSize = {
   heightMm: number;
 };
 
-export type PlateTemplateId = 'aviso-azul-01';
+export type PlateTemplateId = 'aviso-azul-01' | 'proibido-fumar';
 
 export type PlateCategory = {
   id: string;

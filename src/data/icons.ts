@@ -2,7 +2,7 @@ export const PICTOGRAMAS_DISPONIVEIS = {
   'Trânsito / Proibição': [
     { nome: 'Proibido estacionar', slug: 'mdi:car-off' },
     { nome: 'Sem entrada', slug: 'mdi:road-variant-off' },
-    { nome: 'Proibido fumar', slug: 'mdi:smoking-off' },
+    { nome: 'Proibido fumar', slug: 'mdi:smoking' },
     { nome: 'Acesso restrito', slug: 'mdi:shield-off-outline' }
   ],
   'Emergência / Rotas': [
