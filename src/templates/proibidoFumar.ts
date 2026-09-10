@@ -32,6 +32,7 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const outerMargin = 5;
     const outerBorderWidth = 2.5;
     const borderRadius = 5;
+    const textGap = 7 * scale;
 
     const circleRadius = BASE_CIRCLE_RADIUS * scale;
     const circleCenterX = plateCenterX;
@@ -39,11 +40,7 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const slashStroke = circleStroke;
     const slashLength = 2 * Math.sqrt(circleRadius ** 2 - (slashStroke / 2) ** 2);
     const iconScale = BASE_ICON_SCALE * scale;
-    const fontSize = BASE_FONT_SIZE * scale;
-    const lineHeight = BASE_TEXT_LINE_HEIGHT * scale;
 
-    const circleCenterYLocal = 0;
-    const textCenterYLocal = (BASE_TEXT_CENTER_Y - BASE_CIRCLE_CENTER_Y) * scale;
     const rawText = values.message?.trim() || [values.heading, 'FUMAR'].filter(Boolean).join('\n');
     const textLines = rawText
       .split(/\r?\n/)
@@ -51,23 +48,43 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       .filter(Boolean)
       .map((line) => line.toUpperCase());
     const safeLines = textLines.length > 0 ? textLines : ['PROIBIDO', 'FUMAR'];
+
+    const innerLeft = outerMargin + outerBorderWidth;
+    const innerRight = width - outerMargin - outerBorderWidth;
+    const innerTop = outerMargin + outerBorderWidth;
+    const innerBottom = height - outerMargin - outerBorderWidth;
+    const maxTextWidth = Math.max(1, innerRight - innerLeft - 8 * scale);
+
+    const circleBottom = BASE_CIRCLE_CENTER_Y * scale + circleRadius + circleStroke / 2;
+    const textAreaTop = circleBottom + textGap;
+    const textAreaBottom = innerBottom - textGap;
+    const availableTextHeight = Math.max(1, textAreaBottom - textAreaTop);
+
+    const longestLineLength = Math.max(...safeLines.map((line) => line.length));
+    const widthScale = longestLineLength > 0
+      ? Math.min(1, maxTextWidth / (longestLineLength * BASE_FONT_SIZE * 0.56 * scale))
+      : 1;
+    const heightScale = availableTextHeight / (safeLines.length * BASE_TEXT_LINE_HEIGHT * scale);
+    const textScale = Math.min(1, widthScale, heightScale);
+
+    const fontSize = BASE_FONT_SIZE * scale * textScale;
+    const lineHeight = BASE_TEXT_LINE_HEIGHT * scale * textScale;
     const textBlockHeight = safeLines.length * lineHeight;
-    const textTop = textCenterYLocal - textBlockHeight / 2;
-    const textBottom = textCenterYLocal + textBlockHeight / 2;
+    const textCenterYLocal = textAreaTop + textBlockHeight / 2;
 
     const blockTop = Math.min(
-      circleCenterYLocal - circleRadius - circleStroke / 2,
-      textTop,
+      -circleRadius - circleStroke / 2,
+      textCenterYLocal - textBlockHeight / 2,
     );
     const blockBottom = Math.max(
-      circleCenterYLocal + circleRadius + circleStroke / 2,
-      textBottom,
+      circleRadius + circleStroke / 2,
+      textCenterYLocal + textBlockHeight / 2,
     );
     const blockHeight = blockBottom - blockTop;
     const plateCenterY = height / 2;
     const blockOffsetY = plateCenterY - (blockTop + blockHeight / 2);
 
-    const circleCenterY = circleCenterYLocal + blockOffsetY;
+    const circleCenterY = blockOffsetY;
     const textCenterY = textCenterYLocal + blockOffsetY;
 
     const elements: GraphicElement[] = [
