@@ -36,20 +36,38 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
 
     const circleRadius = BASE_CIRCLE_RADIUS * scale;
     const circleCenterX = plateCenterX;
-    const circleCenterY = BASE_CIRCLE_CENTER_Y * scale;
     const circleStroke = BASE_CIRCLE_STROKE * scale;
-
     const slashStroke = circleStroke;
     const slashLength = 2 * Math.sqrt(circleRadius ** 2 - (slashStroke / 2) ** 2);
     const iconScale = BASE_ICON_SCALE * scale;
     const labelFontSize = BASE_FONT_SIZE * scale;
     const messageFontSize = BASE_FONT_SIZE * scale;
 
+    const headingOffset = (BASE_HEADING_Y - BASE_CIRCLE_CENTER_Y) * scale;
+    const messageOffset = (BASE_MESSAGE_Y - BASE_CIRCLE_CENTER_Y) * scale;
+    const circleCenterYLocal = 0;
+    const headingYLocal = headingOffset;
+    const messageYLocal = messageOffset;
+    const blockTop = Math.min(
+      circleCenterYLocal - circleRadius - circleStroke / 2,
+      headingYLocal - labelFontSize / 2,
+      messageYLocal - messageFontSize / 2,
+    );
+    const blockBottom = Math.max(
+      circleCenterYLocal + circleRadius + circleStroke / 2,
+      headingYLocal + labelFontSize / 2,
+      messageYLocal + messageFontSize / 2,
+    );
+    const blockHeight = blockBottom - blockTop;
+    const plateCenterY = height / 2;
+    const blockOffsetY = plateCenterY - (blockTop + blockHeight / 2);
+
+    const circleCenterY = circleCenterYLocal + blockOffsetY;
+    const headingY = headingYLocal + blockOffsetY;
+    const messageY = messageYLocal + blockOffsetY;
+
     const headingText = (values.heading || 'PROIBIDO').toUpperCase();
     const messageText = (values.message || 'FUMAR').toUpperCase();
-
-    const headingY = BASE_HEADING_Y * scale;
-    const messageY = BASE_MESSAGE_Y * scale;
 
     const elements: GraphicElement[] = [
       {
