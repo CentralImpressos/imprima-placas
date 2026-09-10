@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PLATE_SIZES } from './data/sizes';
-import { TEMPLATE_DEFINITIONS } from './data/templates';
+import { createSignInstance } from './data/signs';
 import { IconSelector } from './components/IconSelector';
 import { Preview } from './components/Preview';
 import { SizeSelector } from './components/SizeSelector';
@@ -9,30 +8,35 @@ import { exportPdfFromSvg } from './export/pdf';
 import { exportSvgFile } from './export/svg';
 import { renderIcon } from './renderer/renderIcon';
 import { renderTemplate } from './renderer/renderTemplate';
-import type { PlateFieldValues, PlateTemplateId } from './types';
+import { resolveSignInstance, resolveTemplateSelection, setSignSize, updateSignValue } from './signs/resolveSignInstance';
+import type { PlateFieldValues, PlateTemplateId, SignInstance } from './types';
 
 const DEFAULT_TEMPLATE_ID: PlateTemplateId = 'aviso-azul-01';
+const DEFAULT_SIGN_ID = DEFAULT_TEMPLATE_ID;
 
 export default function PlacaGenerator() {
-  const [templateId, setTemplateId] = useState<PlateTemplateId>(DEFAULT_TEMPLATE_ID);
-  const [cabecalho, setCabecalho] = useState('ATENÇÃO');
-  const [corpo, setCorpo] = useState('É PROIBIDA A ENTRADA DE ANIMAIS');
-  const [tamanho, setTamanho] = useState('20x30');
-  const [possuiIcone, setPossuiIcone] = useState(true);
-  const [tipoIcone, setTipoIcone] = useState('mdi:alert');
+  const [signInstance, setSignInstance] = useState<SignInstance>(() => createSignInstance(DEFAULT_SIGN_ID, '20x30'));
   const [iconSvg, setIconSvg] = useState('');
 
   const placaRef = useRef<HTMLDivElement | null>(null);
 
-  const tamanhoSelecionado = useMemo(
-    () => PLATE_SIZES.find((item) => item.id === tamanho) ?? PLATE_SIZES[2],
-    [tamanho],
-  );
+  const resolvedSign = useMemo(() => resolveSignInstance(signInstance), [signInstance]);
 
-  const template = useMemo(
-    () => TEMPLATE_DEFINITIONS.find((item) => item.id === templateId) ?? TEMPLATE_DEFINITIONS[0],
-    [templateId],
-  );
+  const templateId = resolvedSign.template.id as PlateTemplateId;
+
+  const tamanho = signInstance.sizeId;
+  const cabecalho = typeof resolvedSign.values.heading === 'string' ? resolvedSign.values.heading : 'ATENÇÃO';
+  const corpo = typeof resolvedSign.values.message === 'string' ? resolvedSign.values.message : 'É PROIBIDA A ENTRADA DE ANIMAIS';
+  const possuiIcone = Boolean(resolvedSign.values.showIcon);
+  const tipoIcone = typeof resolvedSign.values.icon === 'string' ? resolvedSign.values.icon : 'mdi:alert';
+
+  const tamanhoSelecionado = resolvedSign.size;
+
+  const template = resolvedSign.template;
+
+  const handleUpdateSignValue = (field: string, value: string | boolean) => {
+    setSignInstance((current) => updateSignValue(current, field, value));
+  };
 
   const renderFieldControl = (fieldId: string) => {
     switch (fieldId) {
@@ -45,7 +49,7 @@ export default function PlacaGenerator() {
             <input
               type="text"
               value={cabecalho}
-              onChange={(event) => setCabecalho(event.target.value)}
+              onChange={(event) => handleUpdateSignValue('heading', event.target.value)}
               className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
             />
           </div>
@@ -59,7 +63,7 @@ export default function PlacaGenerator() {
             <textarea
               rows={3}
               value={corpo}
-              onChange={(event) => setCorpo(event.target.value)}
+              onChange={(event) => handleUpdateSignValue('message', event.target.value)}
               className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"
             />
           </div>
@@ -94,15 +98,12 @@ export default function PlacaGenerator() {
 
   const svgMarkup = useMemo(() => {
     const values: PlateFieldValues = {
-      heading: cabecalho,
-      message: corpo,
-      icon: tipoIcone,
-      showIcon: possuiIcone,
+      ...resolvedSign.values,
       iconSvg,
     };
 
     return renderTemplate(templateId, tamanhoSelecionado.id, values);
-  }, [cabecalho, corpo, iconSvg, possuiIcone, tamanhoSelecionado.id, templateId, tipoIcone]);
+  }, [iconSvg, resolvedSign, tamanhoSelecionado.id, templateId]);
 
   const exportarParaPDF = async () => {
     const svgElement = placaRef.current?.querySelector('svg');
@@ -144,17 +145,25 @@ export default function PlacaGenerator() {
         <div className="lg:col-span-1 bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl flex flex-col gap-4">
           <h2 className="text-lg font-bold text-indigo-400 border-b border-gray-700 pb-2">Configuração da Placa</h2>
 
-          <TemplateSelector selectedTemplateId={templateId} onSelectTemplate={setTemplateId} />
+          <TemplateSelector
+            selectedTemplateId={templateId}
+            onSelectTemplate={(nextTemplateId) => {
+              setSignInstance((current) => resolveTemplateSelection(current, nextTemplateId));
+            }}
+          />
 
           {template.fields.map((field) => renderFieldControl(field.id))}
 
-          <SizeSelector value={tamanho} onChange={setTamanho} />
+          <SizeSelector
+            value={tamanho}
+            onChange={(nextSizeId) => setSignInstance((current) => setSignSize(current, nextSizeId))}
+          />
 
           <IconSelector
             value={tipoIcone}
             showIcon={possuiIcone}
-            onToggleShowIcon={setPossuiIcone}
-            onSelectIcon={setTipoIcone}
+            onToggleShowIcon={(showIcon) => handleUpdateSignValue('showIcon', showIcon)}
+            onSelectIcon={(nextIcon) => handleUpdateSignValue('icon', nextIcon)}
           />
 
           <div className="mt-6 flex flex-col gap-3">

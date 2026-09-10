@@ -1,6 +1,7 @@
 import { getTemplateById } from '../data/templates';
 import { PLATE_SIZES } from '../data/sizes';
 import { createPlateFromLegacySize, getPlateGeometry } from '../geometry';
+import { renderCompositionToSvg } from '../composition';
 import type { PlateFieldValues, PlateSize, PlateTemplateId } from '../types';
 
 export function getSizeById(sizeId: string): PlateSize {
@@ -16,8 +17,7 @@ export function renderTemplate(
   const size = getSizeById(sizeId);
   const plate = createPlateFromLegacySize(size, templateId, 'rectangle');
   const geometry = getPlateGeometry(plate.shape, plate.dimensions, plate.orientation);
+  const composition = template.render(values, size, geometry);
 
-  void geometry;
-
-  return template.render(values, size);
+  return renderCompositionToSvg(composition);
 }

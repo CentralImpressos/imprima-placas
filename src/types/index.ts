@@ -14,6 +14,16 @@ export interface Plate {
   templateId: string;
 }
 
+export type PlateRenderGeometry = {
+  shape: PlateShape;
+  orientation?: PlateOrientation;
+  width: number;
+  height: number;
+  dimensions: PlateDimensions;
+  centerX: number;
+  centerY: number;
+};
+
 export interface PlatePreset {
   id: string;
   name: string;
@@ -55,6 +65,25 @@ export type PlateFieldValues = {
   iconSvg?: string;
 };
 
+export type SignValue = string | boolean;
+
+export type SignValues = Record<string, SignValue>;
+
+export type SignDefinition = {
+  id: string;
+  name: string;
+  categoryId: string;
+  templateId: string;
+  fields?: TemplateField[];
+  defaultValues?: SignValues;
+};
+
+export type SignInstance = {
+  definitionId: string;
+  sizeId: string;
+  values: SignValues;
+};
+
 export type TemplateDefinition = {
   id: PlateTemplateId;
   name: string;
@@ -62,5 +91,5 @@ export type TemplateDefinition = {
   description?: string;
   sizes: string[];
   fields: TemplateField[];
-  render: (values: PlateFieldValues, size: PlateSize) => string;
+  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateRenderGeometry) => import('../composition').Composition;
 };
