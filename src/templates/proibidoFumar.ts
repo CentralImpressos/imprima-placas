@@ -23,8 +23,8 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const BASE_CIRCLE_STROKE = 12;
     const BASE_ICON_SCALE = 4.62;
     const BASE_FONT_SIZE = 30;
-    const BASE_CIRCLE_CENTER_Y = 107;
-    const BASE_TEXT_CENTER_Y = 224;
+    const BASE_CIRCLE_CENTER_Y = 82;
+    const BASE_TEXT_GAP = 8;
     const BASE_TEXT_LINE_HEIGHT = 28;
 
     const scale = width / BASE_WIDTH;
@@ -32,22 +32,26 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const outerMargin = 5;
     const outerBorderWidth = 2.5;
     const borderRadius = 5;
-    const textGap = 7 * scale;
 
     const circleRadius = BASE_CIRCLE_RADIUS * scale;
-    const circleCenterX = plateCenterX;
+    const circleCenterY = BASE_CIRCLE_CENTER_Y * scale;
     const circleStroke = BASE_CIRCLE_STROKE * scale;
     const slashStroke = circleStroke;
     const slashLength = 2 * Math.sqrt(circleRadius ** 2 - (slashStroke / 2) ** 2);
     const iconScale = BASE_ICON_SCALE * scale;
 
-    const rawText = values.message?.trim() || [values.heading, 'FUMAR'].filter(Boolean).join('\n');
-    const textLines = rawText
+    const heading = values.heading?.trim().toUpperCase() || 'PROIBIDO';
+    const message = values.message?.trim() || 'FUMAR';
+    const messageLines = message
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => line.toUpperCase());
-    const safeLines = textLines.length > 0 ? textLines : ['PROIBIDO', 'FUMAR'];
+
+    // O campo Título faz parte da placa. Evita duplicar PROIBIDO caso o usuário
+    // já tenha colocado esse texto manualmente na primeira linha da mensagem.
+    const safeLines = messageLines.length > 0 ? messageLines : ['FUMAR'];
+    const textLines = safeLines[0] === heading ? safeLines : [heading, ...safeLines];
 
     const innerLeft = outerMargin + outerBorderWidth;
     const innerRight = width - outerMargin - outerBorderWidth;
@@ -55,37 +59,26 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const innerBottom = height - outerMargin - outerBorderWidth;
     const maxTextWidth = Math.max(1, innerRight - innerLeft - 8 * scale);
 
-    const circleBottom = BASE_CIRCLE_CENTER_Y * scale + circleRadius + circleStroke / 2;
+    const circleBottom = circleCenterY + circleRadius + circleStroke / 2;
+    const textGap = BASE_TEXT_GAP * scale;
     const textAreaTop = circleBottom + textGap;
-    const textAreaBottom = innerBottom - textGap;
+    const textAreaBottom = innerBottom;
     const availableTextHeight = Math.max(1, textAreaBottom - textAreaTop);
 
-    const longestLineLength = Math.max(...safeLines.map((line) => line.length));
+    const longestLineLength = Math.max(...textLines.map((line) => line.length));
     const widthScale = longestLineLength > 0
       ? Math.min(1, maxTextWidth / (longestLineLength * BASE_FONT_SIZE * 0.56 * scale))
       : 1;
-    const heightScale = availableTextHeight / (safeLines.length * BASE_TEXT_LINE_HEIGHT * scale);
+    const heightScale = availableTextHeight / (textLines.length * BASE_TEXT_LINE_HEIGHT * scale);
     const textScale = Math.min(1, widthScale, heightScale);
 
     const fontSize = BASE_FONT_SIZE * scale * textScale;
     const lineHeight = BASE_TEXT_LINE_HEIGHT * scale * textScale;
-    const textBlockHeight = safeLines.length * lineHeight;
-    const textCenterYLocal = textAreaTop + textBlockHeight / 2;
+    const textBlockHeight = textLines.length * lineHeight;
 
-    const blockTop = Math.min(
-      -circleRadius - circleStroke / 2,
-      textCenterYLocal - textBlockHeight / 2,
-    );
-    const blockBottom = Math.max(
-      circleRadius + circleStroke / 2,
-      textCenterYLocal + textBlockHeight / 2,
-    );
-    const blockHeight = blockBottom - blockTop;
-    const plateCenterY = height / 2;
-    const blockOffsetY = plateCenterY - (blockTop + blockHeight / 2);
-
-    const circleCenterY = blockOffsetY;
-    const textCenterY = textCenterYLocal + blockOffsetY;
+    // Mantém o texto imediatamente abaixo do pictograma, usando o espaço
+    // restante apenas como respiro inferior em vez de centralizar no rodapé.
+    const textCenterY = textAreaTop + textBlockHeight / 2;
 
     const elements: GraphicElement[] = [
       {
@@ -120,7 +113,7 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       },
       {
         type: 'circle',
-        cx: circleCenterX,
+        cx: plateCenterX,
         cy: circleCenterY,
         r: circleRadius,
         fill: 'none',
@@ -132,7 +125,7 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     if (values.showIcon && values.iconSvg) {
       elements.push({
         type: 'icon',
-        x: circleCenterX,
+        x: plateCenterX,
         y: circleCenterY,
         scale: iconScale,
         color: '#000000',
@@ -142,11 +135,11 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
 
     elements.push({
       type: 'group',
-      transform: `rotate(45 ${circleCenterX} ${circleCenterY})`,
+      transform: `rotate(45 ${plateCenterX} ${circleCenterY})`,
       children: [
         {
           type: 'rect',
-          x: circleCenterX - slashStroke / 2,
+          x: plateCenterX - slashStroke / 2,
           y: circleCenterY - slashLength / 2,
           width: slashStroke,
           height: slashLength,
@@ -155,8 +148,8 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       ],
     });
 
-    safeLines.forEach((line, index) => {
-      const y = textCenterY + (index - (safeLines.length - 1) / 2) * lineHeight;
+    textLines.forEach((line, index) => {
+      const y = textCenterY + (index - (textLines.length - 1) / 2) * lineHeight;
       elements.push({
         type: 'text',
         x: plateCenterX,
