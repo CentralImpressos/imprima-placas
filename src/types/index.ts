@@ -37,6 +37,8 @@ export type PlateSize = {
   name: string;
   widthMm: number;
   heightMm: number;
+  shape?: PlateShape;
+  orientation?: PlateOrientation;
 };
 
 export type PlateTemplateId = 'aviso-azul-01' | 'proibido-fumar';

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createSignInstance } from './domain/sign/instance';
 import { IconSelector } from './components/IconSelector';
-import { Preview } from './components/Preview';
 import { SizeSelector } from './components/SizeSelector';
 import { TemplateSelector } from './components/TemplateSelector';
 import { exportPdfFromSvg } from './export/pdf';
@@ -132,69 +131,105 @@ export default function PlacaGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-6 flex flex-col items-center">
-      <header className="w-full max-w-5xl mb-8 flex flex-col md:flex-row justify-between items-center border-b border-gray-800 pb-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">
-            IMPRIMA COOPER <span className="text-indigo-500 text-sm font-normal">| Gerador Técnico de Placas</span>
-          </h1>
-          <p className="text-sm text-gray-400">Padrão NBR 16820 / ISO 7010 & Personalizados</p>
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-5">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ferramenta</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900">Gerador de Placas de Sinalização</h1>
+          </div>
+          <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+            Prototipo interno
+          </div>
         </div>
       </header>
 
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl flex flex-col gap-4">
-          <h2 className="text-lg font-bold text-indigo-400 border-b border-gray-700 pb-2">Configuração da Placa</h2>
+      <main className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 px-6 py-8 lg:grid-cols-[420px_minmax(0,1fr)]">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between border-b border-slate-200 pb-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Configuração</p>
+              <h2 className="mt-1 text-lg font-bold text-slate-900">Dados da placa</h2>
+            </div>
+          </div>
 
-          <TemplateSelector
-            selectedTemplateId={templateId}
-            onSelectTemplate={(nextTemplateId) => {
-              setSignInstance((current) => setSignTemplate(current, nextTemplateId));
-            }}
-          />
+          <div className="space-y-5">
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">1. Modelo</h3>
+              <TemplateSelector
+                selectedTemplateId={templateId}
+                onSelectTemplate={(nextTemplateId) => {
+                  setSignInstance((current) => setSignTemplate(current, nextTemplateId));
+                }}
+              />
+            </section>
 
-          {template.fields.map((field) => renderFieldControl(field.id))}
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">2. Formato</h3>
+              <div className="space-y-3">{template.fields.map((field) => renderFieldControl(field.id))}</div>
+            </section>
 
-          <SizeSelector
-            value={tamanho}
-            onChange={(nextSizeId) => setSignInstance((current) => setSignSize(current, nextSizeId))}
-          />
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">3. Tamanho</h3>
+              <SizeSelector
+                value={tamanho}
+                onChange={(nextSizeId) => setSignInstance((current) => setSignSize(current, nextSizeId))}
+              />
+            </section>
 
-          <IconSelector
-            value={tipoIcone}
-            showIcon={possuiIcone}
-            onToggleShowIcon={(showIcon) => handleUpdateSignValue('showIcon', showIcon)}
-            onSelectIcon={(nextIcon) => handleUpdateSignValue('icon', nextIcon)}
-          />
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">4. Conteúdo</h3>
+              <IconSelector
+                value={tipoIcone}
+                showIcon={possuiIcone}
+                onToggleShowIcon={(showIcon) => handleUpdateSignValue('showIcon', showIcon)}
+                onSelectIcon={(nextIcon) => handleUpdateSignValue('icon', nextIcon)}
+              />
+            </section>
 
-          <div className="mt-6 flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={exportarParaPDF}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md text-sm"
-            >
-              Gerar PDF Vetorial
-            </button>
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">5. Exportação</h3>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={exportarParaPDF}
+                  className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
+                >
+                  Gerar PDF Vetorial
+                </button>
+                <button
+                  type="button"
+                  onClick={exportarSVG}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+                >
+                  Exportar SVG
+                </button>
+              </div>
+            </section>
+          </div>
+        </aside>
 
-            <button
-              type="button"
-              onClick={exportarSVG}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md text-sm"
-            >
-              Exportar SVG
-            </button>
+        <div className="rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Preview</p>
+              <h2 className="mt-1 text-lg font-bold text-slate-900">Visualização em tempo real</h2>
+            </div>
+            <div className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+              {tamanhoSelecionado.name}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-inner">
+            <div className="mx-auto flex max-w-[640px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <div className="w-full max-w-[520px]" dangerouslySetInnerHTML={{ __html: svgMarkup }} />
+            </div>
+            <p className="mt-6 text-center text-xs text-slate-500">
+              SVG vetorial renderizado com dimensões físicas em milímetros.
+            </p>
           </div>
         </div>
-
-        <Preview
-          svgMarkup={svgMarkup}
-          title={`Preview em Tempo Real [${tamanhoSelecionado.name}]`}
-        >
-          <p className="mt-6 text-xs text-gray-500 text-center">
-            * O motor gera o SVG vetorial e exporta diretamente para PDF com dimensões físicas em milímetros.
-          </p>
-        </Preview>
-      </div>
+      </main>
     </div>
   );
 }
