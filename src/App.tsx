@@ -40,6 +40,7 @@ export default function PlacaGenerator() {
   const renderFieldControl = (fieldId: string) => {
     switch (fieldId) {
       case 'heading':
+        if (templateId === 'proibido-fumar') return null;
         return (
           <div key={fieldId} className="field-group">
             <label className="field-label">Texto do Cabeçalho</label>
@@ -51,18 +52,32 @@ export default function PlacaGenerator() {
             />
           </div>
         );
-      case 'message':
+      case 'message': {
+        const isSingleTextProhibition = templateId === 'proibido-fumar';
+        const value = isSingleTextProhibition
+          ? [cabecalho, corpo].filter(Boolean).join('\n')
+          : corpo;
+
         return (
           <div key={fieldId} className="field-group">
-            <label className="field-label">Texto Principal (Corpo)</label>
+            <label className="field-label">{isSingleTextProhibition ? 'Texto da placa' : 'Texto Principal (Corpo)'}</label>
             <textarea
-              rows={3}
-              value={corpo}
-              onChange={(event) => handleUpdateSignValue('message', event.target.value)}
+              rows={isSingleTextProhibition ? 4 : 3}
+              value={value}
+              onChange={(event) => {
+                if (isSingleTextProhibition) {
+                  handleUpdateSignValue('heading', '');
+                  handleUpdateSignValue('message', event.target.value);
+                  return;
+                }
+                handleUpdateSignValue('message', event.target.value);
+              }}
               className="field-textarea"
+              placeholder={isSingleTextProhibition ? 'PROIBIDO\nFUMAR' : undefined}
             />
           </div>
         );
+      }
       default:
         return null;
     }
