@@ -1,20 +1,19 @@
 import { normalizeLines } from '../utils/text';
 import type { Composition, GraphicElement } from '../composition';
-import type { PlateFieldValues, PlateRenderGeometry, PlateSize, TemplateDefinition } from '../types';
+import type { PlateFieldValues, PlateGeometry, PlateSize, TemplateDefinition } from '../types';
 
 export const AVISO_AZUL_01: TemplateDefinition = {
   id: 'aviso-azul-01',
   name: 'Aviso Azul 01',
   category: 'Avisos',
   description: 'Modelo base de aviso em fundo branco, borda azul e cabeçalho institucional.',
-  sizes: ['10x15', '15x21', '20x30', '30x40', '30x50', '40x60', '50x70', '60x80'],
   fields: [
     { id: 'heading', label: 'Cabeçalho', type: 'text', placeholder: 'ATENÇÃO' },
     { id: 'message', label: 'Texto principal', type: 'textarea', placeholder: 'É PROIBIDA A ENTRADA DE ANIMAIS' },
     { id: 'icon', label: 'Pictograma', type: 'select', placeholder: 'mdi:alert' },
     { id: 'showIcon', label: 'Mostrar pictograma', type: 'toggle' }
   ],
-  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateRenderGeometry): Composition => {
+  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateGeometry): Composition => {
     void geometry;
 
     const width = size.widthMm;

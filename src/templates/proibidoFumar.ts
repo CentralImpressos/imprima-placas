@@ -1,18 +1,17 @@
 import type { Composition, GraphicElement } from '../composition';
-import type { PlateFieldValues, PlateRenderGeometry, PlateSize, TemplateDefinition } from '../types';
+import type { PlateFieldValues, PlateGeometry, PlateSize, TemplateDefinition } from '../types';
 
 export const PROIBIDO_FUMAR: TemplateDefinition = {
   id: 'proibido-fumar',
   name: 'Proibido Fumar',
   category: 'Proibição',
   description: 'Placa circular de proibição com pictograma de fumar e risco diagonal separado.',
-  sizes: ['10x15', '15x21', '20x30', '30x40', '30x50', '40x60', '50x70', '60x80'],
   fields: [
     { id: 'message', label: 'Texto da placa', type: 'textarea', placeholder: 'PROIBIDO\nFUMAR' },
     { id: 'icon', label: 'Pictograma', type: 'select', placeholder: 'mdi:smoking' },
     { id: 'showIcon', label: 'Mostrar pictograma', type: 'toggle' },
   ],
-  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateRenderGeometry): Composition => {
+  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateGeometry): Composition => {
     const width = geometry?.width ?? size.widthMm;
     const height = geometry?.height ?? size.heightMm;
     const plateCenterX = width / 2;
@@ -44,18 +43,12 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const BASE_CONTENT_GAP = 14;
     const BASE_GLYPH_WIDTH_FACTOR = 0.52;
 
-    const heading = values.heading?.trim().toUpperCase() || 'PROIBIDO';
-    const message = values.message?.trim() || 'FUMAR';
-    const messageLines = message
+    const message = values.message ?? '';
+    const textLines = message
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => line.toUpperCase());
-
-    // O título é parte fixa da composição. Evita duplicá-lo se o usuário já
-    // digitou "PROIBIDO" como primeira linha.
-    const safeLines = messageLines.length > 0 ? messageLines : ['FUMAR'];
-    const textLines = safeLines[0] === heading ? safeLines : [heading, ...safeLines];
 
     // Primeiro calculamos o bloco em uma escala base.
     // Depois aplicamos UMA escala global ao bloco inteiro. Assim, círculo,

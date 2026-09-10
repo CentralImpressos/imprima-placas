@@ -25,14 +25,12 @@ export const SIGN_DEFINITIONS: SignDefinition[] = [
     categoryId: 'proibicao',
     templateId: 'proibido-fumar',
     fields: [
-      { id: 'heading', label: 'Título', type: 'text', placeholder: 'PROIBIDO' },
-      { id: 'message', label: 'Mensagem', type: 'textarea', placeholder: 'FUMAR' },
+      { id: 'message', label: 'Mensagem', type: 'textarea', placeholder: 'PROIBIDO\nFUMAR' },
       { id: 'icon', label: 'Pictograma', type: 'select', placeholder: 'mdi:smoking-off' },
       { id: 'showIcon', label: 'Mostrar pictograma', type: 'toggle' },
     ],
     defaultValues: {
-      heading: 'PROIBIDO',
-      message: 'FUMAR',
+      message: 'PROIBIDO\nFUMAR',
       icon: 'mdi:smoking',
       showIcon: true,
     },

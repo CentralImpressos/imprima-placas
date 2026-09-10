@@ -43,24 +43,7 @@ export function createPlateFromLegacySize(
   };
 }
 
-export function getGeometryFromLegacySize(
-  size: PlateSize,
-  templateId: string,
-  shape: PlateShape = 'rectangle',
-  orientation?: PlateOrientation,
-): Plate {
-  const resolvedOrientation = shape === 'square'
-    ? undefined
-    : orientation ?? (size.widthMm >= size.heightMm ? 'landscape' : 'portrait');
-
-  return {
-    shape,
-    orientation: resolvedOrientation,
-    dimensions: plateSizeToDimensions(size),
-    templateId,
-  };
-}
-
 export { createCircleGeometry, createRectangleGeometry, createTriangleGeometry };
 
-export type { PlateGeometry, SafeAreaBounds } from './types';
+export type { PlateGeometry } from '../types';
+export type { SafeAreaBounds } from './types';

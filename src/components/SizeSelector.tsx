@@ -18,7 +18,9 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
             className={`size-card ${value === size.id ? 'is-selected' : ''}`}
           >
             <span className="size-card__label">{size.name}</span>
-            <span className="size-card__meta">{size.shape ?? 'Retangular'}</span>
+            <span className="size-card__meta">
+              {size.shape === 'square' ? 'Quadrado' : size.orientation === 'landscape' ? 'Paisagem' : 'Retrato'}
+            </span>
           </button>
         ))}
       </div>

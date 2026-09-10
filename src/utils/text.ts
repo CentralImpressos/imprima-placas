@@ -1,12 +1,3 @@
-export function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
 export function wrapText(value: string, maxChars = 22, maxLines = 3): string[] {
   const normalized = value.replace(/\s+/g, ' ').trim();
 

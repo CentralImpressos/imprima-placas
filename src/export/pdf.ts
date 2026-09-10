@@ -1,7 +1,9 @@
-import { jsPDF } from 'jspdf';
-import { svg2pdf } from 'svg2pdf.js';
-
 export async function exportPdfFromSvg(svgElement: SVGSVGElement, fileName: string, widthMm: number, heightMm: number): Promise<void> {
+  const [{ jsPDF }, { svg2pdf }] = await Promise.all([
+    import('jspdf'),
+    import('svg2pdf.js'),
+  ]);
+
   const pdf = new jsPDF({
     unit: 'mm',
     format: [widthMm, heightMm],

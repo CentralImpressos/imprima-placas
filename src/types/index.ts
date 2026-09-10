@@ -14,7 +14,7 @@ export interface Plate {
   templateId: string;
 }
 
-export type PlateRenderGeometry = {
+export type PlateGeometry = {
   shape: PlateShape;
   orientation?: PlateOrientation;
   width: number;
@@ -91,7 +91,6 @@ export type TemplateDefinition = {
   name: string;
   category: string;
   description?: string;
-  sizes: string[];
   fields: TemplateField[];
-  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateRenderGeometry) => import('../composition').Composition;
+  render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateGeometry) => import('../composition').Composition;
 };
