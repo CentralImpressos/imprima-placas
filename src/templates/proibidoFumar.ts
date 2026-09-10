@@ -1,3 +1,4 @@
+import { normalizeLines } from '../utils/text';
 import type { Composition, GraphicElement } from '../composition';
 import type { PlateFieldValues, PlateGeometry, PlateSize, TemplateDefinition } from '../types';
 
@@ -43,12 +44,16 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const BASE_CONTENT_GAP = 14;
     const BASE_GLYPH_WIDTH_FACTOR = 0.52;
 
+    // Quebra automática: sem isso, uma linha digitada sem \n manual não tinha
+    // limite de largura e podia estourar a área segura da placa inteira
+    // (o piso mínimo de escala do bloco evitava texto ilegível, mas às custas
+    // de deixar o texto vazar pra fora da moldura). maxChars é calculado a
+    // partir da largura segura na escala base (contentScale = 1), então uma
+    // linha só é quebrada quando de fato não caberia lado a lado com a
+    // largura disponível.
+    const maxCharsPerLine = Math.max(4, Math.floor(safeWidth / (BASE_FONT_SIZE * BASE_GLYPH_WIDTH_FACTOR)));
     const message = values.message ?? '';
-    const textLines = message
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => line.toUpperCase());
+    const textLines = normalizeLines(message, 6, maxCharsPerLine).map((line) => line.toUpperCase());
 
     // Primeiro calculamos o bloco em uma escala base.
     // Depois aplicamos UMA escala global ao bloco inteiro. Assim, círculo,
@@ -67,7 +72,11 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       safeHeight / contentHeightBase,
     );
 
-    const contentScale = Math.max(0.35, fitScale);
+    // Com a quebra automática de linha, fitScale raramente precisa cair muito.
+    // Esse piso é só uma rede de segurança contra texto ilegível em casos
+    // extremos (ex. muitas linhas numa placa minúscula) — não deve mais ser
+    // usado pra "esconder" overflow, então é bem mais baixo que antes.
+    const contentScale = Math.max(0.18, fitScale);
     const circleRadius = BASE_CIRCLE_RADIUS * contentScale;
     const circleStroke = Math.max(1.5, circleStrokeBase * contentScale);
     const slashStroke = circleStroke;
