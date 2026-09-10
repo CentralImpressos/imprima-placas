@@ -1,3 +1,27 @@
+export type PlateShape = 'rectangle' | 'square' | 'circle' | 'triangle';
+
+export type PlateOrientation = 'portrait' | 'landscape';
+
+export interface PlateDimensions {
+  width: number;
+  height: number;
+}
+
+export interface Plate {
+  shape: PlateShape;
+  orientation?: PlateOrientation;
+  dimensions: PlateDimensions;
+  templateId: string;
+}
+
+export interface PlatePreset {
+  id: string;
+  name: string;
+  shape: PlateShape;
+  orientation?: PlateOrientation;
+  dimensions: PlateDimensions;
+}
+
 export type PlateSize = {
   id: string;
   name: string;
@@ -28,6 +52,7 @@ export type PlateFieldValues = {
   message: string;
   icon: string;
   showIcon: boolean;
+  iconSvg?: string;
 };
 
 export type TemplateDefinition = {
