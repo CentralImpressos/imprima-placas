@@ -48,14 +48,13 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
       .filter(Boolean)
       .map((line) => line.toUpperCase());
 
-    // O campo Título faz parte da placa. Evita duplicar PROIBIDO caso o usuário
-    // já tenha colocado esse texto manualmente na primeira linha da mensagem.
+    // O título é parte fixa da composição. Evita duplicá-lo se já estiver
+    // presente como primeira linha do texto digitado.
     const safeLines = messageLines.length > 0 ? messageLines : ['FUMAR'];
     const textLines = safeLines[0] === heading ? safeLines : [heading, ...safeLines];
 
     const innerLeft = outerMargin + outerBorderWidth;
     const innerRight = width - outerMargin - outerBorderWidth;
-    const innerTop = outerMargin + outerBorderWidth;
     const innerBottom = height - outerMargin - outerBorderWidth;
     const maxTextWidth = Math.max(1, innerRight - innerLeft - 8 * scale);
 
@@ -75,9 +74,6 @@ export const PROIBIDO_FUMAR: TemplateDefinition = {
     const fontSize = BASE_FONT_SIZE * scale * textScale;
     const lineHeight = BASE_TEXT_LINE_HEIGHT * scale * textScale;
     const textBlockHeight = textLines.length * lineHeight;
-
-    // Mantém o texto imediatamente abaixo do pictograma, usando o espaço
-    // restante apenas como respiro inferior em vez de centralizar no rodapé.
     const textCenterY = textAreaTop + textBlockHeight / 2;
 
     const elements: GraphicElement[] = [
