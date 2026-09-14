@@ -94,7 +94,6 @@ function fitTextToTargetWidth(message: string, targetWidthMm: number, maxWidthMm
   return fitted;
 }
 
-/** Raio máximo do conteúdo (pictograma ou anel) dentro da forma geométrica. */
 function maxContentRadius(
   frameType: SignRenderConfig['frameType'],
   w: number,
@@ -126,6 +125,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   const frame = cmykToRgb(appearance.frameColor);
   const bg = cmykToRgb(appearance.backgroundColor);
   const iconRgb = cmykToRgb(appearance.iconColor);
+  const textRgb = cmykToRgb(appearance.textColor ?? { c: 0, m: 0, y: 0, k: 100 });
   const s = scaleFor(w, h);
   const margin = 4 * s;
   const stroke = 2 * s;
@@ -164,8 +164,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (hasOptionalFrame) elements.push({ type: 'polygon', points: pointsString(insetPolygon(outerPoints, margin)), fill: 'none', stroke: frame, strokeWidth: stroke, strokeLinejoin: 'round' });
   }
 
-  // Cabeçalho: respiro inferior ~5.5% da altura da placa (mín. 2× pad).
-  const headerBottomPad = Math.max(pad * 2.2, h * 0.055);
+  // Cabeçalho: respiro inferior moderado (~7.5%) para o texto não colar na moldura.
+  const headerBottomPad = Math.max(pad * 2.8, h * 0.075);
   const contentTop = frameType === 'header' ? margin + 30 * s : margin + pad;
   const contentBottom = frameType === 'header' ? h - margin - headerBottomPad : h - margin - pad;
   const contentLeft = margin + stroke + pad;
@@ -196,9 +196,10 @@ export function renderTemplate(config: SignRenderConfig): string {
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
 
-  const layoutSafeGap = frameType === 'header' ? 4 * s : 3 * s;
-  const layoutTop = contentTop + layoutSafeGap;
-  const layoutBottom = contentBottom - layoutSafeGap;
+  const layoutSafeGapTop = frameType === 'header' ? 4 * s : 3 * s;
+  const layoutSafeGapBottom = frameType === 'header' ? 5.5 * s : 3 * s;
+  const layoutTop = contentTop + layoutSafeGapTop;
+  const layoutBottom = contentBottom - layoutSafeGapBottom;
   const layoutHeight = Math.max(1, layoutBottom - layoutTop);
   let finalLines: string[] = [];
   let finalFontSize = 12;
@@ -212,7 +213,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     const minPict = Math.min(usableWidth * 0.35, layoutHeight * 0.22);
     const gap = 7 * s;
     let pictSize = preferredPict;
-    // Metade da espessura do anel “vaza” para fora do raio nominal.
     const ringOut = (size: number) => (needsRing ? Math.max(1.8, (size / 2) * 0.16) * 0.5 : 0);
     let textMaxH = Math.max(20, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
     let fitted = fitTextToTargetWidth(message, wordCount <= 2 ? Math.min(usableWidth, pictSize) : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
@@ -234,7 +234,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     pictExtent = pictSize + ringOut(pictSize) * 2;
     blockH = pictExtent + gap * groupScale + textH;
     const free = Math.max(0, layoutHeight - blockH);
-    // Com anel no cabeçalho, o círculo vermelho pesa visualmente: deixa um pouco mais de ar sob a faixa.
     const topShare = (frameType === 'header' && needsRing) ? 0.58 : 0.5;
     const blockTop = layoutTop + free * topShare;
     const iconY = blockTop + ringOut(pictSize) + pictSize / 2;
@@ -298,6 +297,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY += 3 * s;
   }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
-  finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight, text: line, fontSize: finalFontSize, fontWeight: 800, fill: '#000', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
+  finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight, text: line, fontSize: finalFontSize, fontWeight: 800, fill: textRgb, fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
   return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
 }
