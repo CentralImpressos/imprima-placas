@@ -11,6 +11,7 @@ import type { CmykColor, FrameType, PictogramPosition, PlateSize } from './types
 const FRAME_OPTIONS: Array<[FrameType, string]> = [['simple', 'Simples'], ['header', 'Cabeçalho'], ['diamond', 'Losango'], ['triangle', 'Triângulo'], ['circular', 'Circular']];
 const DEFAULT_ICON_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
 const DEFAULT_SYMBOL_COLOR: CmykColor = { c: 0, m: 100, y: 100, k: 0 };
+const DEFAULT_TEXT_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
 const CMYK_PRESETS: Array<{ name: string; color: CmykColor; hex: string }> = [
   { name: 'Preto', color: { c: 0, m: 0, y: 0, k: 100 }, hex: '#000000' },
   { name: 'Azul', color: { c: 100, m: 80, y: 0, k: 0 }, hex: '#0033FF' },
@@ -26,31 +27,253 @@ const TRIANGLE_SIDES = [100, 150, 200, 300, 400, 500, 600, 700, 800];
 const SQUARE_SIZES = [100, 150, 200, 300, 400, 500, 600, 700, 800];
 const triangleHeight = (side: number) => side * Math.sqrt(3) / 2;
 
-function cmykToHex({ c, m, y, k }: CmykColor): string { const C = clamp(c) / 100, M = clamp(m) / 100, Y = clamp(y) / 100, K = clamp(k) / 100; return `#${[Math.round(255 * (1 - C) * (1 - K)), Math.round(255 * (1 - M) * (1 - K)), Math.round(255 * (1 - Y) * (1 - K))].map((v) => v.toString(16).padStart(2, '0')).join('')}`; }
-function hexToCmyk(hex: string): CmykColor { const raw = hex.replace('#', ''); const full = raw.length === 3 ? raw.split('').map((ch) => ch + ch).join('') : raw.padEnd(6, '0').slice(0, 6); const r = parseInt(full.slice(0, 2), 16) / 255, g = parseInt(full.slice(2, 4), 16) / 255, b = parseInt(full.slice(4, 6), 16) / 255; const k = 1 - Math.max(r, g, b); if (k >= 0.999) return { c: 0, m: 0, y: 0, k: 100 }; return { c: Math.round(clamp(((1 - r - k) / (1 - k)) * 100)), m: Math.round(clamp(((1 - g - k) / (1 - k)) * 100)), y: Math.round(clamp(((1 - b - k) / (1 - k)) * 100)), k: Math.round(clamp(k * 100)) }; }
-function ColorFields({ label, color, setColor }: { label: string; color: CmykColor; setColor: (color: CmykColor) => void }) { return <div className="color-block"><div className="color-block__header"><label className="field-label">{label}</label><input className="color-picker" type="color" value={cmykToHex(color)} title="Selecionar cor" onChange={(event) => setColor(hexToCmyk(event.target.value))} /></div><div className="cmyk-presets" aria-label={`Cores CMYK preestabelecidas para ${label}`}>{CMYK_PRESETS.map((preset) => <button key={preset.name} type="button" className="cmyk-swatch" title={`${preset.name} — C${preset.color.c} M${preset.color.m} Y${preset.color.y} K${preset.color.k}`} aria-label={`${preset.name} — C${preset.color.c} M${preset.color.m} Y${preset.color.y} K${preset.color.k}`} style={{ background: preset.hex }} onClick={() => setColor({ ...preset.color })} />)}</div><div className="cmyk-grid">{(['c', 'm', 'y', 'k'] as const).map((key) => <label key={key}><span>{key.toUpperCase()}</span><input className="cmyk-input" type="number" min="0" max="100" value={color[key]} onChange={(event) => setColor({ ...color, [key]: clamp(Number(event.target.value)) })} /></label>)}</div></div>; }
-function makeShapeSizes(frameType: FrameType): PlateSize[] { if (frameType === 'circular' || frameType === 'diamond') return SQUARE_SIZES.map((side) => ({ id: `${side}x${side}`, name: `${side / 10} × ${side / 10} cm`, widthMm: side, heightMm: side, shape: 'square' })); if (frameType === 'triangle') return TRIANGLE_SIDES.map((side) => ({ id: `tri-${side}`, name: `Lado ${side / 10} cm`, widthMm: side, heightMm: triangleHeight(side), shape: 'triangle' })); return PLATE_SIZES.filter((item) => item.shape !== 'square'); }
-function defaultSizeId(frameType: FrameType) { return frameType === 'triangle' ? 'tri-200' : frameType === 'circular' || frameType === 'diamond' ? '200x200' : '20x30'; }
+function cmykToHex({ c, m, y, k }: CmykColor): string {
+  const C = clamp(c) / 100, M = clamp(m) / 100, Y = clamp(y) / 100, K = clamp(k) / 100;
+  return `#${[Math.round(255 * (1 - C) * (1 - K)), Math.round(255 * (1 - M) * (1 - K)), Math.round(255 * (1 - Y) * (1 - K))].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+function hexToCmyk(hex: string): CmykColor {
+  const raw = hex.replace('#', '');
+  const full = raw.length === 3 ? raw.split('').map((ch) => ch + ch).join('') : raw.padEnd(6, '0').slice(0, 6);
+  const r = parseInt(full.slice(0, 2), 16) / 255, g = parseInt(full.slice(2, 4), 16) / 255, b = parseInt(full.slice(4, 6), 16) / 255;
+  const k = 1 - Math.max(r, g, b);
+  if (k >= 0.999) return { c: 0, m: 0, y: 0, k: 100 };
+  return { c: Math.round(clamp(((1 - r - k) / (1 - k)) * 100)), m: Math.round(clamp(((1 - g - k) / (1 - k)) * 100)), y: Math.round(clamp(((1 - b - k) / (1 - k)) * 100)), k: Math.round(clamp(k * 100)) };
+}
+function ColorFields({ label, color, setColor }: { label: string; color: CmykColor; setColor: (color: CmykColor) => void }) {
+  return <div className="color-block">
+    <div className="color-block__header">
+      <label className="field-label">{label}</label>
+      <input className="color-picker" type="color" value={cmykToHex(color)} title="Selecionar cor" onChange={(event) => setColor(hexToCmyk(event.target.value))} />
+    </div>
+    <div className="cmyk-presets" aria-label={`Cores CMYK preestabelecidas para ${label}`}>
+      {CMYK_PRESETS.map((preset) => (
+        <button key={preset.name} type="button" className="cmyk-swatch" title={`${preset.name} — C${preset.color.c} M${preset.color.m} Y${preset.color.y} K${preset.color.k}`} aria-label={`${preset.name} — C${preset.color.c} M${preset.color.m} Y${preset.color.y} K${preset.color.k}`} style={{ background: preset.hex }} onClick={() => setColor({ ...preset.color })} />
+      ))}
+    </div>
+    <div className="cmyk-grid">
+      {(['c', 'm', 'y', 'k'] as const).map((key) => (
+        <label key={key}><span>{key.toUpperCase()}</span><input className="cmyk-input" type="number" min="0" max="100" value={color[key]} onChange={(event) => setColor({ ...color, [key]: clamp(Number(event.target.value)) })} /></label>
+      ))}
+    </div>
+  </div>;
+}
+function makeShapeSizes(frameType: FrameType): PlateSize[] {
+  if (frameType === 'circular' || frameType === 'diamond') return SQUARE_SIZES.map((side) => ({ id: `${side}x${side}`, name: `${side / 10} × ${side / 10} cm`, widthMm: side, heightMm: side, shape: 'square' }));
+  if (frameType === 'triangle') return TRIANGLE_SIDES.map((side) => ({ id: `tri-${side}`, name: `Lado ${side / 10} cm`, widthMm: side, heightMm: triangleHeight(side), shape: 'triangle' }));
+  return PLATE_SIZES.filter((item) => item.shape !== 'square');
+}
+function defaultSizeId(frameType: FrameType) {
+  return frameType === 'triangle' ? 'tri-200' : frameType === 'circular' || frameType === 'diamond' ? '200x200' : '20x30';
+}
 
 export default function App() {
   const initialPreset = SIGN_PRESETS.find((preset) => preset.id === 'proibido-fumar') ?? SIGN_PRESETS[0];
-  const [presetId, setPresetId] = useState(initialPreset.id); const preset = useMemo(() => SIGN_PRESETS.find((item) => item.id === presetId) ?? initialPreset, [presetId, initialPreset]);
-  const [frameType, setFrameType] = useState<FrameType>(initialPreset.frameType); const [heading, setHeading] = useState(initialPreset.heading ?? 'AVISO'); const [message, setMessage] = useState(initialPreset.message); const [icon, setIcon] = useState(initialPreset.icon ?? 'mdi:alert'); const [iconSvg, setIconSvg] = useState(''); const [showIcon, setShowIcon] = useState(true);
-  const [position, setPosition] = useState<PictogramPosition>(initialPreset.defaults?.pictogramPosition ?? 'top'); const [circle, setCircle] = useState(Boolean(initialPreset.defaults?.circle)); const [prohibition, setProhibition] = useState(Boolean(initialPreset.defaults?.prohibition)); const [frameEnabled, setFrameEnabled] = useState(true);
-  const [frameColor, setFrameColor] = useState<CmykColor>(initialPreset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR); const [backgroundColor, setBackgroundColor] = useState<CmykColor>(initialPreset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 }); const [iconColor, setIconColor] = useState<CmykColor>(initialPreset.defaults?.iconColor ?? DEFAULT_ICON_COLOR); const [symbolColor, setSymbolColor] = useState<CmykColor>(initialPreset.defaults?.symbolColor ?? DEFAULT_SYMBOL_COLOR);
-  const [sizeId, setSizeId] = useState('20x30'); const [custom, setCustom] = useState(false); const [customW, setCustomW] = useState(200); const [customH, setCustomH] = useState(300); const placaRef = useRef<HTMLDivElement | null>(null); const sizeOptions = useMemo(() => makeShapeSizes(frameType), [frameType]);
-  useEffect(() => { let active = true; void renderIcon(icon).then((svg) => { if (active) setIconSvg(svg); }); return () => { active = false; }; }, [icon]);
-  useEffect(() => { setFrameType(preset.frameType); setHeading(preset.heading ?? 'AVISO'); setMessage(preset.message); setIcon(preset.icon ?? 'mdi:alert'); setShowIcon(preset.icon !== undefined); setCircle(Boolean(preset.defaults?.circle)); setProhibition(Boolean(preset.defaults?.prohibition)); setFrameEnabled(preset.defaults?.frameEnabled ?? true); setPosition(preset.frameType === 'header' ? 'top' : (preset.defaults?.pictogramPosition ?? 'top')); setFrameColor(preset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR); setBackgroundColor(preset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 }); setIconColor(preset.defaults?.iconColor ?? DEFAULT_ICON_COLOR); setSymbolColor(preset.defaults?.symbolColor ?? DEFAULT_SYMBOL_COLOR); }, [preset]);
-  useEffect(() => { if (!sizeOptions.some((item) => item.id === sizeId)) { setSizeId(defaultSizeId(frameType)); setCustom(false); } }, [frameType, sizeId, sizeOptions]);
-  const size = custom ? { id: 'custom', name: frameType === 'triangle' ? `Lado ${customW} mm` : `${customW} × ${frameType === 'circular' || frameType === 'diamond' ? customW : customH} mm`, widthMm: customW, heightMm: frameType === 'triangle' ? triangleHeight(customW) : frameType === 'circular' || frameType === 'diamond' ? customW : customH } : (sizeOptions.find((item) => item.id === sizeId) ?? sizeOptions[0]);
-  const svgMarkup = useMemo(() => { const rendered = renderTemplate({ frameType, widthMm: size.widthMm, heightMm: size.heightMm, heading, message, iconSvg, iconSlug: icon, showIcon, appearance: { frameColor, backgroundColor, iconColor, symbolColor, frameEnabled, circle, prohibition, pictogramPosition: position } }); return rendered.replaceAll('rgb(220,0,0)', cmykToHex(symbolColor)); }, [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, icon, showIcon, frameColor, backgroundColor, iconColor, symbolColor, frameEnabled, circle, prohibition, position]);
-  const filteredPresets = SIGN_PRESETS.filter((item) => item.frameType === frameType); const exportPdf = async () => { const svg = placaRef.current?.querySelector('svg'); if (!svg) return; await exportPdfFromSvg(svg as SVGSVGElement, `placa-${presetId}-${size.id}.pdf`, size.widthMm, size.heightMm); };
-  const selectFrame = (next: FrameType) => { setFrameType(next); const nextPreset = SIGN_PRESETS.find((item) => item.frameType === next); if (nextPreset) setPresetId(nextPreset.id); setFrameEnabled(true); setSizeId(defaultSizeId(next)); setCustom(false); if (next === 'header') setPosition('top'); };
-  return <div className="app-shell"><header className="app-header"><div><span className="eyebrow">Ferramenta de produção</span><h1>Gerador de Placas de Sinalização</h1></div><span className="status-pill">Protótipo interno</span></header><main className="app-layout"><aside className="config-panel">
-    <section className="config-section"><h2>1. Estrutura</h2><label className="field-label">Tipo de estrutura</label><select className="field-select" value={frameType} onChange={(event) => selectFrame(event.target.value as FrameType)}>{FRAME_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><label className="field-label">Preset</label><select className="field-select" value={presetId} onChange={(event) => setPresetId(event.target.value)}>{filteredPresets.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select>{frameType !== 'simple' && frameType !== 'header' && <label className="check-row"><input type="checkbox" checked={frameEnabled} onChange={(event) => setFrameEnabled(event.target.checked)} /> Aplicar moldura</label>}</section>
-    <section className="config-section"><h2>2. Conteúdo</h2>{frameType === 'header' && <><label className="field-label">Cabeçalho</label><textarea className="field-textarea field-textarea--heading" rows={2} value={heading} onChange={(event) => setHeading(event.target.value)} /></>}<label className="field-label">Texto</label><textarea className="field-textarea" value={message} onChange={(event) => setMessage(event.target.value)} /><IconSelector value={icon} showIcon={showIcon} onToggleShowIcon={setShowIcon} onSelectIcon={setIcon} /><label className="field-label">Posição</label><select className="field-select" value={position} onChange={(event) => setPosition(event.target.value as PictogramPosition)}><option value="left">À esquerda do texto</option><option value="right">À direita do texto</option><option value="top">Centralizado acima</option></select><label className="check-row"><input type="checkbox" checked={circle} onChange={(event) => setCircle(event.target.checked)} /> Aplicar círculo</label><label className="check-row prohibition"><input type="checkbox" checked={prohibition} onChange={(event) => setProhibition(event.target.checked)} /> Aplicar símbolo de proibição</label></section>
-    <section className="config-section"><h2>3. Cores CMYK</h2><ColorFields label="Moldura / Cabeçalho" color={frameColor} setColor={setFrameColor} /><ColorFields label="Fundo" color={backgroundColor} setColor={setBackgroundColor} /><ColorFields label="Pictograma" color={iconColor} setColor={setIconColor} /><ColorFields label="Círculo / Proibição" color={symbolColor} setColor={setSymbolColor} /></section>
-    <section className="config-section"><h2>4. Tamanho</h2><label className="field-label">Dimensão</label><select className="field-select" value={custom ? 'custom' : sizeId} onChange={(event) => { if (event.target.value === 'custom') setCustom(true); else { setCustom(false); setSizeId(event.target.value); } }}>{sizeOptions.map((item) => <option value={item.id} key={item.id}>{item.name}{frameType === 'triangle' ? ' — Triângulo equilátero' : frameType === 'circular' ? ' — Diâmetro' : frameType === 'diamond' ? ' — Lado' : item.shape === 'square' ? ' — Quadrado' : item.orientation === 'landscape' ? ' — Paisagem' : ' — Retrato'}</option>)}<option value="custom">Tamanho personalizado</option></select>{custom && <div className="custom-size">{frameType === 'triangle' ? <label>Lado (mm)<input className="field-input" type="number" min="20" value={customW} onChange={(event) => setCustomW(Math.max(20, Number(event.target.value)))} /></label> : frameType === 'circular' || frameType === 'diamond' ? <label>{frameType === 'circular' ? 'Diâmetro (mm)' : 'Lado (mm)'}<input className="field-input" type="number" min="20" value={customW} onChange={(event) => setCustomW(Math.max(20, Number(event.target.value)))} /></label> : <><label>Largura (mm)<input className="field-input" type="number" min="20" value={customW} onChange={(event) => setCustomW(Math.max(20, Number(event.target.value)))} /></label><label>Altura (mm)<input className="field-input" type="number" min="20" value={customH} onChange={(event) => setCustomH(Math.max(20, Number(event.target.value)))} /></label></>}</div>}</section>
-    <section className="config-section"><h2>5. Exportação</h2><button className="btn btn--primary" onClick={exportPdf}>Gerar PDF Vetorial</button><button className="btn btn--secondary" onClick={() => exportSvgFile(svgMarkup, `placa-${presetId}-${size.id}.svg`)}>Exportar SVG</button></section>
-  </aside><section className="preview-panel"><div className="preview-header"><div><span className="eyebrow">Preview</span><h2>Visualização em tempo real</h2></div><span className="preview-badge">{size.name}</span></div><div className="preview-surface"><div ref={placaRef} className="svg-stage" dangerouslySetInnerHTML={{ __html: svgMarkup }} /></div><p className="preview-caption">Dimensões físicas em milímetros · composição SVG vetorial</p></section></main></div>;
+  const [presetId, setPresetId] = useState(initialPreset.id);
+  const preset = useMemo(() => SIGN_PRESETS.find((item) => item.id === presetId) ?? initialPreset, [presetId, initialPreset]);
+  const [frameType, setFrameType] = useState<FrameType>(initialPreset.frameType);
+  const [heading, setHeading] = useState(initialPreset.heading ?? 'AVISO');
+  const [message, setMessage] = useState(initialPreset.message);
+  const [icon, setIcon] = useState(initialPreset.icon ?? 'mdi:alert');
+  const [iconSvg, setIconSvg] = useState('');
+  const [showIcon, setShowIcon] = useState(true);
+  const [position, setPosition] = useState<PictogramPosition>(initialPreset.defaults?.pictogramPosition ?? 'top');
+  const [circle, setCircle] = useState(Boolean(initialPreset.defaults?.circle));
+  const [prohibition, setProhibition] = useState(Boolean(initialPreset.defaults?.prohibition));
+  const [frameEnabled, setFrameEnabled] = useState(true);
+  const [frameColor, setFrameColor] = useState<CmykColor>(initialPreset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
+  const [backgroundColor, setBackgroundColor] = useState<CmykColor>(initialPreset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 });
+  const [iconColor, setIconColor] = useState<CmykColor>(initialPreset.defaults?.iconColor ?? DEFAULT_ICON_COLOR);
+  const [symbolColor, setSymbolColor] = useState<CmykColor>(initialPreset.defaults?.symbolColor ?? DEFAULT_SYMBOL_COLOR);
+  const [textColor, setTextColor] = useState<CmykColor>(initialPreset.defaults?.textColor ?? DEFAULT_TEXT_COLOR);
+  const [sizeId, setSizeId] = useState('20x30');
+  const [custom, setCustom] = useState(false);
+  const [customW, setCustomW] = useState(200);
+  const [customH, setCustomH] = useState(300);
+  const placaRef = useRef<HTMLDivElement | null>(null);
+  const sizeOptions = useMemo(() => makeShapeSizes(frameType), [frameType]);
+
+  useEffect(() => {
+    let active = true;
+    void renderIcon(icon).then((svg) => { if (active) setIconSvg(svg); });
+    return () => { active = false; };
+  }, [icon]);
+
+  useEffect(() => {
+    setFrameType(preset.frameType);
+    setHeading(preset.heading ?? 'AVISO');
+    setMessage(preset.message);
+    setIcon(preset.icon ?? 'mdi:alert');
+    setShowIcon(preset.icon !== undefined);
+    setCircle(Boolean(preset.defaults?.circle));
+    setProhibition(Boolean(preset.defaults?.prohibition));
+    setFrameEnabled(preset.defaults?.frameEnabled ?? true);
+    setPosition(preset.frameType === 'header' ? 'top' : (preset.defaults?.pictogramPosition ?? 'top'));
+    setFrameColor(preset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
+    setBackgroundColor(preset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 });
+    setIconColor(preset.defaults?.iconColor ?? DEFAULT_ICON_COLOR);
+    setSymbolColor(preset.defaults?.symbolColor ?? DEFAULT_SYMBOL_COLOR);
+    setTextColor(preset.defaults?.textColor ?? DEFAULT_TEXT_COLOR);
+  }, [preset]);
+
+  useEffect(() => {
+    if (!sizeOptions.some((item) => item.id === sizeId)) {
+      setSizeId(defaultSizeId(frameType));
+      setCustom(false);
+    }
+  }, [frameType, sizeId, sizeOptions]);
+
+  const size = custom
+    ? {
+        id: 'custom',
+        name: frameType === 'triangle'
+          ? `Lado ${customW} mm`
+          : `${customW} × ${frameType === 'circular' || frameType === 'diamond' ? customW : customH} mm`,
+        widthMm: customW,
+        heightMm: frameType === 'triangle'
+          ? triangleHeight(customW)
+          : frameType === 'circular' || frameType === 'diamond'
+            ? customW
+            : customH,
+      }
+    : (sizeOptions.find((item) => item.id === sizeId) ?? sizeOptions[0]);
+
+  const svgMarkup = useMemo(() => {
+    const rendered = renderTemplate({
+      frameType,
+      widthMm: size.widthMm,
+      heightMm: size.heightMm,
+      heading,
+      message,
+      iconSvg,
+      iconSlug: icon,
+      showIcon,
+      appearance: {
+        frameColor,
+        backgroundColor,
+        iconColor,
+        symbolColor,
+        textColor,
+        frameEnabled,
+        circle,
+        prohibition,
+        pictogramPosition: position,
+      },
+    });
+    return rendered.replaceAll('rgb(220,0,0)', cmykToHex(symbolColor));
+  }, [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, icon, showIcon, frameColor, backgroundColor, iconColor, symbolColor, textColor, frameEnabled, circle, prohibition, position]);
+
+  const filteredPresets = SIGN_PRESETS.filter((item) => item.frameType === frameType);
+  const exportPdf = async () => {
+    const svg = placaRef.current?.querySelector('svg');
+    if (!svg) return;
+    await exportPdfFromSvg(svg as SVGSVGElement, `placa-${presetId}-${size.id}.pdf`, size.widthMm, size.heightMm);
+  };
+  const selectFrame = (next: FrameType) => {
+    setFrameType(next);
+    const nextPreset = SIGN_PRESETS.find((item) => item.frameType === next);
+    if (nextPreset) setPresetId(nextPreset.id);
+    setFrameEnabled(true);
+    setSizeId(defaultSizeId(next));
+    setCustom(false);
+    if (next === 'header') setPosition('top');
+  };
+
+  return <div className="app-shell">
+    <header className="app-header">
+      <div><span className="eyebrow">Ferramenta de produção</span><h1>Gerador de Placas de Sinalização</h1></div>
+      <span className="status-pill">Protótipo interno</span>
+    </header>
+    <main className="app-layout">
+      <aside className="config-panel">
+        <section className="config-section">
+          <h2>1. Estrutura</h2>
+          <label className="field-label">Tipo de estrutura</label>
+          <select className="field-select" value={frameType} onChange={(event) => selectFrame(event.target.value as FrameType)}>
+            {FRAME_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+          </select>
+          <label className="field-label">Preset</label>
+          <select className="field-select" value={presetId} onChange={(event) => setPresetId(event.target.value)}>
+            {filteredPresets.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+          </select>
+          {frameType !== 'simple' && frameType !== 'header' && (
+            <label className="check-row">
+              <input type="checkbox" checked={frameEnabled} onChange={(event) => setFrameEnabled(event.target.checked)} /> Aplicar moldura
+            </label>
+          )}
+        </section>
+        <section className="config-section">
+          <h2>2. Conteúdo</h2>
+          {frameType === 'header' && (
+            <>
+              <label className="field-label">Cabeçalho</label>
+              <textarea className="field-textarea field-textarea--heading" rows={2} value={heading} onChange={(event) => setHeading(event.target.value)} />
+            </>
+          )}
+          <label className="field-label">Texto</label>
+          <textarea className="field-textarea field-textarea--body" rows={2} value={message} onChange={(event) => setMessage(event.target.value)} />
+          <IconSelector value={icon} showIcon={showIcon} onToggleShowIcon={setShowIcon} onSelectIcon={setIcon} />
+          <label className="field-label">Posição</label>
+          <select className="field-select" value={position} onChange={(event) => setPosition(event.target.value as PictogramPosition)}>
+            <option value="left">À esquerda do texto</option>
+            <option value="right">À direita do texto</option>
+            <option value="top">Centralizado acima</option>
+          </select>
+          <label className="check-row"><input type="checkbox" checked={circle} onChange={(event) => setCircle(event.target.checked)} /> Aplicar círculo</label>
+          <label className="check-row prohibition"><input type="checkbox" checked={prohibition} onChange={(event) => setProhibition(event.target.checked)} /> Aplicar símbolo de proibição</label>
+        </section>
+        <section className="config-section">
+          <h2>3. Cores CMYK</h2>
+          <ColorFields label="Moldura / Cabeçalho" color={frameColor} setColor={setFrameColor} />
+          <ColorFields label="Fundo" color={backgroundColor} setColor={setBackgroundColor} />
+          <ColorFields label="Texto" color={textColor} setColor={setTextColor} />
+          <ColorFields label="Pictograma" color={iconColor} setColor={setIconColor} />
+          <ColorFields label="Círculo / Proibição" color={symbolColor} setColor={setSymbolColor} />
+        </section>
+        <section className="config-section">
+          <h2>4. Tamanho</h2>
+          <label className="field-label">Dimensão</label>
+          <select className="field-select" value={custom ? 'custom' : sizeId} onChange={(event) => {
+            if (event.target.value === 'custom') setCustom(true);
+            else { setCustom(false); setSizeId(event.target.value); }
+          }}>
+            {sizeOptions.map((item) => (
+              <option value={item.id} key={item.id}>
+                {item.name}{frameType === 'triangle' ? ' — Triângulo equilátero' : frameType === 'circular' ? ' — Diâmetro' : frameType === 'diamond' ? ' — Lado' : item.shape === 'square' ? ' — Quadrado' : item.orientation === 'landscape' ? ' — Paisagem' : ' — Retrato'}
+              </option>
+            ))}
+            <option value="custom">Tamanho personalizado</option>
+          </select>
+          {custom && (
+            <div className="custom-size">
+              {frameType === 'triangle' ? (
+                <label>Lado (mm)<input className="field-input" type="number" min="20" value={customW} onChange={(event) => setCustomW(Math.max(20, Number(event.target.value)))} /></label>
+              ) : frameType === 'circular' || frameType === 'diamond' ? (
+                <label>{frameType === 'circular' ? 'Diâmetro (mm)' : 'Lado (mm)'}<input className="field-input" type="number" min="20" value={customW} onChange={(event) => setCustomW(Math.max(20, Number(event.target.value)))} /></label>
+              ) : (
+                <>
+                  <label>Largura (mm)<input className="field-input" type="number" min="20" value={customW} onChange={(event) => setCustomW(Math.max(20, Number(event.target.value)))} /></label>
+                  <label>Altura (mm)<input className="field-input" type="number" min="20" value={customH} onChange={(event) => setCustomH(Math.max(20, Number(event.target.value)))} /></label>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+        <section className="config-section">
+          <h2>5. Exportação</h2>
+          <button className="btn btn--primary" onClick={exportPdf}>Gerar PDF Vetorial</button>
+          <button className="btn btn--secondary" onClick={() => exportSvgFile(svgMarkup, `placa-${presetId}-${size.id}.svg`)}>Exportar SVG</button>
+        </section>
+      </aside>
+      <section className="preview-panel">
+        <div className="preview-header">
+          <div><span className="eyebrow">Preview</span><h2>Visualização em tempo real</h2></div>
+          <span className="preview-badge">{size.name}</span>
+        </div>
+        <div className="preview-surface">
+          <div ref={placaRef} className="svg-stage" dangerouslySetInnerHTML={{ __html: svgMarkup }} />
+        </div>
+        <p className="preview-caption">Dimensões físicas em milímetros · composição SVG vetorial</p>
+      </section>
+    </main>
+  </div>;
 }
