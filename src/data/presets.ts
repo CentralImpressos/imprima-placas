@@ -1,6 +1,6 @@
 import type { SignPreset } from '../types';
 
-export const DEFAULT_FRAME_COLOR = { c: 0, m: 0, y: 0, k: 30 };
+export const DEFAULT_FRAME_COLOR = { c: 0, m: 0, y: 0, k: 100 };
 export const DEFAULT_BLUE = { c: 100, m: 70, y: 0, k: 0 };
 export const DEFAULT_RED = { c: 0, m: 100, y: 100, k: 0 };
 export const DEFAULT_YELLOW = { c: 0, m: 15, y: 100, k: 0 };
@@ -8,7 +8,7 @@ export const DEFAULT_GREEN = { c: 85, m: 0, y: 80, k: 10 };
 
 export const SIGN_PRESETS: SignPreset[] = [
   { id: 'proibido-fumar', name: 'Proibido Fumar', frameType: 'simple', message: 'PROIBIDO\nFUMAR', icon: 'mdi:smoking', defaults: { prohibition: true, frameColor: DEFAULT_FRAME_COLOR, pictogramPosition: 'top' } },
-  { id: 'entrada-animais', name: 'Entrada de Animais', frameType: 'header', heading: 'AVISO', message: 'É PROIBIDA A ENTRADA DE ANIMAIS', icon: 'mdi:dog', defaults: { frameColor: DEFAULT_BLUE } },
+  { id: 'entrada-animais', name: 'Entrada de Animais', frameType: 'header', heading: 'AVISO', message: 'É PROIBIDA A ENTRADA DE ANIMAIS', icon: 'mdi:dog', defaults: { frameColor: DEFAULT_FRAME_COLOR } },
   { id: 'criancas-acompanhadas', name: 'Crianças Acompanhadas', frameType: 'header', heading: 'AVISO', message: 'CRIANÇAS SOMENTE ACOMPANHADAS DE UM RESPONSÁVEL', icon: 'mdi:account-child', defaults: { frameColor: DEFAULT_BLUE } },
   { id: 'ducha-piscina', name: 'Ducha Antes da Piscina', frameType: 'header', heading: 'AVISO', message: 'OBRIGATÓRIO PASSAR PELA DUCHA ANTES DE ENTRAR NA PISCINA', icon: 'mdi:shower', defaults: { frameColor: DEFAULT_BLUE } },
   { id: 'proibido-nadar', name: 'Proibido Nadar', frameType: 'simple', message: 'PROIBIDO\nNADAR', icon: 'mdi:swim', defaults: { prohibition: true } },
