@@ -175,7 +175,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
   const isNonRectangular = frameType === 'circular' || frameType === 'diamond' || frameType === 'triangle';
   const usableWidth = isNonRectangular ? Math.min(w, h) - 2 * (margin + pad) : contentRight - contentLeft;
-  const usableHeight = Math.max(1, contentBottom - contentTop);
   const contentCenterX = (contentLeft + contentRight) / 2;
   const needsRing = appearance.circle || appearance.prohibition;
   const position = appearance.pictogramPosition;
