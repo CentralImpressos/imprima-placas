@@ -41,16 +41,15 @@ function iconElements(svg: string, x: number, y: number, scale: number, prohibit
   if (!prohibition) return elements;
 
   const radius = 11.5 * scale;
-  const stroke = 2.2 * scale;
-  elements.push({ type: 'circle', cx: x, cy: y, r: radius, fill: 'none', stroke: 'rgb(220,0,0)', strokeWidth: stroke });
-  elements.push({ type: 'group', transform: `rotate(45 ${x} ${y})`, children: [{ type: 'rect', x: x - stroke / 2, y: y - radius, width: stroke, height: radius * 2, fill: 'rgb(220,0,0)' }] });
+  const prohibitionStroke = 2.2 * scale;
+  elements.push({ type: 'circle', cx: x, cy: y, r: radius, fill: 'none', stroke: 'rgb(220,0,0)', strokeWidth: prohibitionStroke });
+  elements.push({ type: 'group', transform: `rotate(45 ${x} ${y})`, children: [{ type: 'rect', x: x - prohibitionStroke / 2, y: y - radius, width: prohibitionStroke, height: radius * 2, fill: 'rgb(220,0,0)' }] });
   return elements;
 }
 
 export function renderTemplate(config: SignRenderConfig): string {
-  const requested = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
-  const w = requested.width;
-  const h = requested.height;
+  const geometry = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
+  const { width: w, height: h, centerX: cx, centerY: cy } = geometry;
   const { frameType, appearance } = config;
   const frame = cmykToRgb(appearance.frameColor);
   const bg = cmykToRgb(appearance.backgroundColor);
@@ -58,8 +57,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   const margin = 5 * s;
   const stroke = 2 * s;
   const pad = 7 * s;
-  const cx = requested.centerX;
-  const cy = requested.centerY;
   const elements: GraphicElement[] = [];
 
   if (frameType === 'simple' || frameType === 'header') {
@@ -74,16 +71,15 @@ export function renderTemplate(config: SignRenderConfig): string {
       elements.push({ type: 'text', x: cx, y: margin + headerH / 2, text: (config.heading || 'AVISO').toUpperCase(), fontSize: 16 * s, fontWeight: 800, fill: '#fff', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: 'middle', dominantBaseline: 'middle' });
     }
   } else if (frameType === 'circular') {
-    const radius = requested.radius! - margin;
-    elements.push({ type: 'circle', cx, cy, r: radius, fill: bg, stroke: frame, strokeWidth: stroke });
-  } else if (frameType === 'diamond') {
-    const points = insetPolygon(requested.points!, margin);
-    elements.push({ type: 'polygon', points: pointsString(requested.points!), fill: bg, stroke: frame, strokeWidth: stroke });
-    elements.push({ type: 'polygon', points: pointsString(points), fill: 'none', stroke: frame, strokeWidth: stroke });
-  } else if (frameType === 'triangle') {
-    const points = insetPolygon(requested.points!, margin);
-    elements.push({ type: 'polygon', points: pointsString(requested.points!), fill: bg, stroke: frame, strokeWidth: stroke });
-    elements.push({ type: 'polygon', points: pointsString(points), fill: 'none', stroke: frame, strokeWidth: stroke });
+    const outerRadius = geometry.radius!;
+    const borderRadius = outerRadius - margin;
+    elements.push({ type: 'circle', cx, cy, r: outerRadius, fill: bg });
+    elements.push({ type: 'circle', cx, cy, r: borderRadius, fill: 'none', stroke: frame, strokeWidth: stroke });
+  } else if (frameType === 'diamond' || frameType === 'triangle') {
+    const outerPoints = geometry.points!;
+    const borderPoints = insetPolygon(outerPoints, margin);
+    elements.push({ type: 'polygon', points: pointsString(outerPoints), fill: bg });
+    elements.push({ type: 'polygon', points: pointsString(borderPoints), fill: 'none', stroke: frame, strokeWidth: stroke, });
   }
 
   const contentTop = frameType === 'header' ? margin + 32 * s : margin + pad;
