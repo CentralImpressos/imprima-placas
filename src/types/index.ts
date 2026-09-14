@@ -19,6 +19,7 @@ export type SignAppearance = {
   frameColor: CmykColor;
   backgroundColor: CmykColor;
   iconColor: CmykColor;
+  frameEnabled: boolean;
   circle: boolean;
   prohibition: boolean;
   pictogramPosition: PictogramPosition;
