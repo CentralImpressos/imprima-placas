@@ -160,46 +160,50 @@ export function renderTemplate(config: SignRenderConfig): string {
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
 
+  const layoutSafeGap = 3 * s;
+  const layoutTop = contentTop + layoutSafeGap;
+  const layoutBottom = contentBottom - layoutSafeGap;
+  const layoutHeight = Math.max(1, layoutBottom - layoutTop);
   let finalLines: string[] = [];
   let finalFontSize = 12;
   let finalLineHeight = 14;
   let textX = contentCenterX;
-  let textY = contentTop + usableHeight / 2;
+  let textY = layoutTop + layoutHeight / 2;
   const wordCount = message.split(/\s+/).filter(Boolean).length;
 
   if (hasIcon && position === 'top') {
-    const preferredPict = Math.min(usableWidth * 0.7, usableHeight * 0.48);
-    const minPict = Math.min(usableWidth * 0.35, usableHeight * 0.22);
+    const preferredPict = Math.min(usableWidth * 0.7, layoutHeight * 0.48);
+    const minPict = Math.min(usableWidth * 0.35, layoutHeight * 0.22);
     const gap = 7 * s;
     let pictSize = preferredPict;
-    let textMaxH = Math.max(20, usableHeight - pictSize - gap);
+    let textMaxH = Math.max(20, layoutHeight - pictSize - gap);
     let fitted = fitTextToTargetWidth(message, wordCount <= 2 ? Math.min(usableWidth, pictSize) : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
     let textH = fitted.lines.length * fitted.lineHeight;
     let blockH = pictSize + gap + textH;
-    if (blockH > usableHeight && pictSize > minPict) {
-      pictSize = clamp(usableHeight - textH - gap, minPict, preferredPict);
-      textMaxH = Math.max(18, usableHeight - pictSize - gap);
+    if (blockH > layoutHeight && pictSize > minPict) {
+      pictSize = clamp(layoutHeight - textH - gap, minPict, preferredPict);
+      textMaxH = Math.max(18, layoutHeight - pictSize - gap);
       fitted = fitTextToTargetWidth(message, Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
       textH = fitted.lines.length * fitted.lineHeight;
       blockH = pictSize + gap + textH;
     }
-    const groupScale = blockH > usableHeight ? usableHeight / blockH : 1;
+    const groupScale = blockH > layoutHeight ? layoutHeight / blockH : 1;
     pictSize *= groupScale;
     fitted = { lines: fitted.lines, fontSize: Math.max(8, fitted.fontSize * groupScale), lineHeight: Math.max(9, fitted.lineHeight * groupScale) };
     textH = fitted.lines.length * fitted.lineHeight;
-    const blockTop = contentTop + (usableHeight - (pictSize + gap * groupScale + textH)) / 2;
+    const blockTop = layoutTop + (layoutHeight - (pictSize + gap * groupScale + textH)) / 2;
     const iconY = blockTop + pictSize / 2;
     textY = blockTop + pictSize + gap * groupScale + textH / 2;
     textX = contentCenterX;
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
     elements.push(...iconElements(config.iconSvg, contentCenterX, iconY, computeIconScale(pictSize, needsRing, letterBoost), needsRing ? pictSize / 2 : 0, appearance.circle, appearance.prohibition, iconRgb));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    const preferredPict = Math.min(usableHeight * 0.64, usableWidth * 0.36);
-    const minPict = Math.min(usableHeight * 0.28, usableWidth * 0.18);
+    const preferredPict = Math.min(layoutHeight * 0.64, usableWidth * 0.36);
+    const minPict = Math.min(layoutHeight * 0.28, usableWidth * 0.18);
     const gap = 6 * s;
     let pictSize = preferredPict;
     let textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
-    let fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, usableHeight);
+    let fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, layoutHeight);
     let textH = fitted.lines.length * fitted.lineHeight;
     let textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
     let blockW = pictSize + gap + textW;
@@ -207,13 +211,13 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (blockW > usableWidth && pictSize > minPict) {
       pictSize = clamp(usableWidth - gap - textW, minPict, preferredPict);
       textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
-      fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, usableHeight);
+      fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, layoutHeight);
       textH = fitted.lines.length * fitted.lineHeight;
       textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
       blockW = pictSize + gap + textW;
       blockH = Math.max(pictSize, textH);
     }
-    const groupScale = blockW > usableWidth || blockH > usableHeight ? Math.min(usableWidth / Math.max(1, blockW), usableHeight / Math.max(1, blockH)) : 1;
+    const groupScale = blockW > usableWidth || blockH > layoutHeight ? Math.min(usableWidth / Math.max(1, blockW), layoutHeight / Math.max(1, blockH)) : 1;
     pictSize *= groupScale;
     fitted = { lines: fitted.lines, fontSize: Math.max(8, fitted.fontSize * groupScale), lineHeight: Math.max(9, fitted.lineHeight * groupScale) };
     textH = fitted.lines.length * fitted.lineHeight;
@@ -221,7 +225,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     blockW = pictSize + gap * groupScale + textW;
     blockH = Math.max(pictSize, textH);
     const blockLeft = contentLeft + (usableWidth - blockW) / 2;
-    const blockTop = contentTop + (usableHeight - blockH) / 2;
+    const blockTop = layoutTop + (layoutHeight - blockH) / 2;
     const iconY = blockTop + blockH / 2;
     textY = iconY;
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
@@ -238,11 +242,11 @@ export function renderTemplate(config: SignRenderConfig): string {
       elements.push(...iconElements(config.iconSvg, iconX, iconY, iconScale, needsRing ? ringRadius : 0, appearance.circle, appearance.prohibition, iconRgb));
     }
   } else {
-    const fitted = fitTextToTargetWidth(message, usableWidth * 0.95, usableWidth, usableHeight);
+    const fitted = fitTextToTargetWidth(message, usableWidth * 0.95, usableWidth, layoutHeight);
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
     const textH = finalLines.length * finalLineHeight;
     textX = contentCenterX;
-    textY = contentTop + (usableHeight - textH) / 2 + textH / 2;
+    textY = layoutTop + (layoutHeight - textH) / 2 + textH / 2;
   }
 
   if (message && (frameType === 'simple' || frameType === 'header')) {
