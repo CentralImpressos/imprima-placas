@@ -210,8 +210,24 @@ export function renderTemplate(config: SignRenderConfig): string {
   const message = config.message.trim();
 
   if (!message && hasIcon) {
-    const centerY = frameType === 'triangle' ? h * (2 / 3) : cy;
-    const maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
+    // Cabeçalho: centraliza na área branca abaixo da faixa (não no centro da placa).
+    // Demais formas: centro geométrico / óptico habitual.
+    let centerY: number;
+    let maxR: number;
+    if (frameType === 'header') {
+      centerY = (contentTop + contentBottom) / 2;
+      const areaH = Math.max(1, contentBottom - contentTop);
+      const areaW = Math.max(1, contentRight - contentLeft);
+      const half = Math.min(areaW, areaH) / 2;
+      // Reserva um pouco para o stroke do anel e respiro da moldura.
+      maxR = half * (needsRing ? 0.86 : 0.9);
+    } else if (frameType === 'triangle') {
+      centerY = h * (2 / 3);
+      maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
+    } else {
+      centerY = cy;
+      maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
+    }
     const pictSize = needsRing ? maxR * 2 : maxR * 2 * 0.9;
     elements.push(...iconElements(
       config.iconSvg,
