@@ -1,5 +1,5 @@
 import type { SignRenderConfig } from '../types';
-import type { Composition, GraphicElement } from '../composition';
+import type { GraphicElement } from '../composition';
 import { renderCompositionToSvg } from '../composition';
 import { getFrameGeometry, insetPolygon } from './geometry';
 
