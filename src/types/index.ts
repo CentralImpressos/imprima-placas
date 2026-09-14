@@ -18,6 +18,7 @@ export type SignValues = Record<string, SignValue>;
 export type SignAppearance = {
   frameColor: CmykColor;
   backgroundColor: CmykColor;
+  iconColor: CmykColor;
   circle: boolean;
   prohibition: boolean;
   pictogramPosition: PictogramPosition;

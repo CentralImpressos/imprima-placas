@@ -33,6 +33,7 @@ export const PICTOGRAMAS_DISPONIVEIS = {
   ],
   'Advertência': [
     { nome: 'Atenção', slug: 'mdi:alert' },
+    { nome: 'Raio / Elétrico', slug: 'mdi:flash' },
     { nome: 'Piso escorregadio', slug: 'mdi:liquid-spot' },
     { nome: 'Risco elétrico', slug: 'mdi:flash-alert' },
     { nome: 'Cuidado com máquinas', slug: 'mdi:industrial' },
@@ -44,6 +45,8 @@ export const PICTOGRAMAS_DISPONIVEIS = {
     { nome: 'Queda de objetos', slug: 'mdi:arrow-collapse-down' },
     { nome: 'Radiação', slug: 'mdi:radioactive' },
     { nome: 'Cuidado cão', slug: 'mdi:dog-side' },
+    { nome: 'Frágil', slug: 'mdi:glass-fragile' },
+    { nome: 'Embalagem frágil', slug: 'mdi:package-variant' },
   ],
   'Obrigações / Informações': [
     { nome: 'Use máscara', slug: 'mdi:face-mask' },
@@ -59,7 +62,7 @@ export const PICTOGRAMAS_DISPONIVEIS = {
   ],
   'Utilidades / Serviços': [
     { nome: 'Câmera de segurança', slug: 'mdi:cctv' },
-    { nome: 'Acesso cadeirantes', slug: 'mdi:wheelchair-accessibility' },
+    { nome: 'Acessibilidade', slug: 'mdi:wheelchair' },
     { nome: 'Banheiro', slug: 'mdi:toilet' },
     { nome: 'Banheiro masculino', slug: 'mdi:human-male' },
     { nome: 'Banheiro feminino', slug: 'mdi:human-female' },
@@ -86,5 +89,7 @@ export const PICTOGRAMAS_DISPONIVEIS = {
     { nome: 'Fumar permitido', slug: 'mdi:smoking' },
     { nome: 'Água potável', slug: 'mdi:water-check' },
     { nome: 'Não pisar na grama', slug: 'mdi:grass' },
+    { nome: 'Limpe os dejetos', slug: 'mdi:emoticon-poop' },
+    { nome: 'Coleira obrigatória', slug: 'mdi:dog-service' },
   ],
 } as const;

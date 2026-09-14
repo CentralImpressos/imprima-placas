@@ -16,6 +16,8 @@ const FRAME_OPTIONS: Array<[FrameType, string]> = [
   ['circular', 'Circular'],
 ];
 
+const DEFAULT_ICON_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
+
 const clamp = (n: number) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
 
 function cmykToHex({ c, m, y, k }: CmykColor): string {
@@ -96,6 +98,7 @@ export default function App() {
   const [prohibition, setProhibition] = useState(Boolean(initialPreset.defaults?.prohibition));
   const [frameColor, setFrameColor] = useState<CmykColor>(initialPreset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
   const [backgroundColor, setBackgroundColor] = useState<CmykColor>(initialPreset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 });
+  const [iconColor, setIconColor] = useState<CmykColor>(initialPreset.defaults?.iconColor ?? DEFAULT_ICON_COLOR);
   const [sizeId, setSizeId] = useState('20x30');
   const [custom, setCustom] = useState(false);
   const [customW, setCustomW] = useState(200);
@@ -122,6 +125,7 @@ export default function App() {
     setPosition(defaultPos);
     setFrameColor(preset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
     setBackgroundColor(preset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 });
+    setIconColor(preset.defaults?.iconColor ?? DEFAULT_ICON_COLOR);
   }, [preset]);
 
   const size = custom
@@ -137,8 +141,8 @@ export default function App() {
     iconSvg,
     iconSlug: icon,
     showIcon,
-    appearance: { frameColor, backgroundColor, circle, prohibition, pictogramPosition: position },
-  }), [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, icon, showIcon, frameColor, backgroundColor, circle, prohibition, position]);
+    appearance: { frameColor, backgroundColor, iconColor, circle, prohibition, pictogramPosition: position },
+  }), [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, icon, showIcon, frameColor, backgroundColor, iconColor, circle, prohibition, position]);
 
   const filteredPresets = SIGN_PRESETS.filter((item) => item.frameType === frameType);
   const exportPdf = async () => {
@@ -178,6 +182,7 @@ export default function App() {
         <section className="config-section"><h2>3. Cores CMYK</h2>
           <ColorFields label="Moldura / Cabeçalho" color={frameColor} setColor={setFrameColor} />
           <ColorFields label="Fundo" color={backgroundColor} setColor={setBackgroundColor} />
+          <ColorFields label="Pictograma" color={iconColor} setColor={setIconColor} />
         </section>
         <section className="config-section"><h2>4. Tamanho</h2>
           <label className="field-label">Dimensão</label>
