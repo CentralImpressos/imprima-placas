@@ -14,10 +14,6 @@ const cmykToRgb = ({ c, m, y, k }: { c: number; m: number; y: number; k: number 
 
 const scaleFor = (w: number, h: number) => Math.min(w, h) / 100;
 
-/**
- * Quebra por espaços e quebras de linha explícitas.
- * Só parte uma palavra se ela sozinha for maior que maxChars (caso extremo).
- */
 function wrap(text: string, maxChars: number) {
   const limit = Math.max(1, maxChars);
   return text.split(/\r?\n/).flatMap((line) => {
@@ -29,7 +25,6 @@ function wrap(text: string, maxChars: number) {
 
     words.forEach((word) => {
       if (word.length > limit) {
-        // Último recurso: parte a palavra.
         if (current) {
           output.push(current);
           current = '';
@@ -118,8 +113,8 @@ function computeIconScale(blockWidth: number, needsRing: boolean, letterBoost: n
   return ((blockWidth * 0.92) / 24) * letterBoost;
 }
 
-// Barlow Semi Condensed bold: glifos mais estreitos que uma sans genérica.
-const CHAR_WIDTH_FACTOR = 0.5;
+// Barlow Semi Condensed bold — glifos estreitos.
+const CHAR_WIDTH_FACTOR = 0.48;
 
 function longestWordLen(message: string): number {
   return message
@@ -129,10 +124,6 @@ function longestWordLen(message: string): number {
     .reduce((max, word) => Math.max(max, word.length), 1);
 }
 
-/**
- * Encaixa texto em maxWidth x maxHeight.
- * Prioriza não partir palavras: reduz a fonte antes de hard-break.
- */
 function fitText(
   message: string,
   preferredFontSize: number,
@@ -141,14 +132,13 @@ function fitText(
   minFontSize = 9,
 ): { lines: string[]; fontSize: number; lineHeight: number } {
   const maxWord = longestWordLen(message);
-  // Fonte máxima que ainda mantém a maior palavra inteira.
   const maxFontForWord = maxWidthMm / (maxWord * CHAR_WIDTH_FACTOR);
   let fontSize = Math.min(preferredFontSize, maxFontForWord);
 
   for (let i = 0; i < 16; i += 1) {
     const maxChars = Math.max(maxWord, Math.floor(maxWidthMm / Math.max(1, fontSize * CHAR_WIDTH_FACTOR)));
     const lines = wrap(message, maxChars);
-    const lineHeight = fontSize * 1.12;
+    const lineHeight = fontSize * 1.1;
     const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
     const width = longest * fontSize * CHAR_WIDTH_FACTOR;
     const height = Math.max(lineHeight, lines.length * lineHeight);
@@ -167,7 +157,39 @@ function fitText(
 
   const maxChars = Math.max(1, Math.floor(maxWidthMm / Math.max(1, fontSize * CHAR_WIDTH_FACTOR)));
   const lines = wrap(message, maxChars);
-  return { lines, fontSize, lineHeight: fontSize * 1.12 };
+  return { lines, fontSize, lineHeight: fontSize * 1.1 };
+}
+
+/**
+ * Dimensiona a fonte para a linha mais longa preencher targetWidth,
+ * respeitando maxHeight e sem partir palavras.
+ */
+function fitTextToTargetWidth(
+  message: string,
+  targetWidthMm: number,
+  maxWidthMm: number,
+  maxHeightMm: number,
+  minFontSize = 9,
+): { lines: string[]; fontSize: number; lineHeight: number } {
+  const widthCap = Math.min(targetWidthMm, maxWidthMm);
+  // Começa com fonte que faria ~8 chars ocuparem a largura alvo.
+  const seedFont = widthCap / (8 * CHAR_WIDTH_FACTOR);
+  let fitted = fitText(message, seedFont, widthCap, maxHeightMm, minFontSize);
+
+  // Se ainda sobrar largura e altura, cresce a fonte até preencher o alvo.
+  for (let i = 0; i < 8; i += 1) {
+    const longest = fitted.lines.reduce((max, line) => Math.max(max, line.length), 1);
+    const currentW = longest * fitted.fontSize * CHAR_WIDTH_FACTOR;
+    const currentH = fitted.lines.length * fitted.lineHeight;
+    if (currentW >= widthCap * 0.96 || currentH >= maxHeightMm * 0.98) break;
+
+    const grow = Math.min(widthCap / Math.max(1, currentW), maxHeightMm / Math.max(1, currentH));
+    if (grow <= 1.02) break;
+    const nextFont = fitted.fontSize * Math.min(grow, 1.15);
+    fitted = fitText(message, nextFont, widthCap, maxHeightMm, minFontSize);
+  }
+
+  return fitted;
 }
 
 export function renderTemplate(config: SignRenderConfig): string {
@@ -254,23 +276,20 @@ export function renderTemplate(config: SignRenderConfig): string {
   if (hasIcon && position === 'top') {
     const preferredPict = Math.min(usableWidth * 0.7, usableHeight * 0.5);
     const minPict = Math.min(usableWidth * 0.35, usableHeight * 0.22);
-    const gap = 8 * s;
-
-    // Largura do texto ≥ diâmetro do pictograma, limitada à área útil.
-    const preferredTextWidth = Math.min(usableWidth, preferredPict * 1.1);
-    // Fonte pensada para ~8–9 chars (PROIBIDO) na largura alvo.
-    const preferredFont = clamp(preferredTextWidth * 0.24, 14, 56);
+    const gap = 7 * s;
 
     let pictSize = preferredPict;
-    let textMaxH = Math.max(preferredFont * 1.2, usableHeight - pictSize - gap);
-    let fitted = fitText(message, preferredFont, preferredTextWidth, textMaxH);
+    // Texto mira a largura do diâmetro do pictograma.
+    let textTargetW = Math.min(usableWidth, pictSize);
+    let textMaxH = Math.max(20, usableHeight - pictSize - gap);
+    let fitted = fitTextToTargetWidth(message, textTargetW, usableWidth, textMaxH);
 
     let textH = fitted.lines.length * fitted.lineHeight;
     let blockH = pictSize + gap + textH;
 
     if (blockH > usableHeight) {
-      textMaxH = Math.max(preferredFont * 0.9, usableHeight - pictSize - gap);
-      fitted = fitText(message, preferredFont, preferredTextWidth, textMaxH);
+      textMaxH = Math.max(18, usableHeight - pictSize - gap);
+      fitted = fitTextToTargetWidth(message, textTargetW, usableWidth, textMaxH);
       textH = fitted.lines.length * fitted.lineHeight;
       blockH = pictSize + gap + textH;
     }
@@ -278,8 +297,9 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (blockH > usableHeight && pictSize > minPict) {
       const availableForPict = usableHeight - textH - gap;
       pictSize = clamp(availableForPict, minPict, preferredPict);
-      textMaxH = Math.max(9 * 1.12, usableHeight - pictSize - gap);
-      fitted = fitText(message, preferredFont, Math.min(usableWidth, pictSize * 1.1), textMaxH);
+      textTargetW = Math.min(usableWidth, pictSize);
+      textMaxH = Math.max(18, usableHeight - pictSize - gap);
+      fitted = fitTextToTargetWidth(message, textTargetW, usableWidth, textMaxH);
       textH = fitted.lines.length * fitted.lineHeight;
       blockH = pictSize + gap + textH;
     }
@@ -297,7 +317,6 @@ export function renderTemplate(config: SignRenderConfig): string {
       blockH = pictSize + gap * groupScale + textH;
     }
 
-    // Centro vertical do grupo na área útil.
     const blockTop = contentTop + (usableHeight - blockH) / 2;
     const iconY = blockTop + pictSize / 2;
     textY = blockTop + pictSize + gap * groupScale + textH / 2;
@@ -320,15 +339,19 @@ export function renderTemplate(config: SignRenderConfig): string {
       appearance.prohibition,
     ));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    const preferredPict = Math.min(usableHeight * 0.62, usableWidth * 0.4);
+    const preferredPict = Math.min(usableHeight * 0.62, usableWidth * 0.38);
     const minPict = Math.min(usableHeight * 0.28, usableWidth * 0.18);
-    const gap = 14 * s;
+    const gap = 6 * s; // gap menor entre pictograma e texto
 
     let pictSize = preferredPict;
     let textAreaW = Math.max(30 * s, usableWidth - pictSize - gap);
-    const preferredFont = clamp(Math.min(textAreaW * 0.2, usableHeight * 0.18), 14, 50);
-
-    let fitted = fitText(message, preferredFont, textAreaW, usableHeight);
+    // Fonte maior: mira preencher boa parte da área de texto.
+    let fitted = fitTextToTargetWidth(
+      message,
+      textAreaW * 0.95,
+      textAreaW,
+      usableHeight,
+    );
     let textH = fitted.lines.length * fitted.lineHeight;
     let textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
     let blockW = pictSize + gap + textW;
@@ -337,7 +360,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (blockW > usableWidth && pictSize > minPict) {
       pictSize = clamp(usableWidth - gap - textW, minPict, preferredPict);
       textAreaW = Math.max(30 * s, usableWidth - pictSize - gap);
-      fitted = fitText(message, preferredFont, textAreaW, usableHeight);
+      fitted = fitTextToTargetWidth(message, textAreaW * 0.95, textAreaW, usableHeight);
       textH = fitted.lines.length * fitted.lineHeight;
       textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
       blockW = pictSize + gap + textW;
@@ -359,7 +382,6 @@ export function renderTemplate(config: SignRenderConfig): string {
       blockH = Math.max(pictSize, textH);
     }
 
-    // Centro do grupo na área útil (não na placa inteira).
     const blockLeft = contentLeft + (usableWidth - blockW) / 2;
     const blockTop = contentTop + (usableHeight - blockH) / 2;
     const iconY = blockTop + blockH / 2;
@@ -399,8 +421,12 @@ export function renderTemplate(config: SignRenderConfig): string {
       ));
     }
   } else {
-    const preferredFont = clamp(Math.min(usableWidth * 0.14, usableHeight * 0.14), 14, 56);
-    const fitted = fitText(message, preferredFont, usableWidth, usableHeight);
+    const fitted = fitTextToTargetWidth(
+      message,
+      usableWidth * 0.92,
+      usableWidth,
+      usableHeight,
+    );
     finalLines = fitted.lines;
     finalFontSize = fitted.fontSize;
     finalLineHeight = fitted.lineHeight;
