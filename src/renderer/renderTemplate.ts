@@ -139,7 +139,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   }
 
   const contentTop = frameType === 'header' ? margin + 30 * s : margin + pad;
-  const contentBottom = h - margin - pad;
+  const contentBottom = frameType === 'header' ? h - margin : h - margin - pad;
   const contentLeft = margin + stroke + pad;
   const contentRight = w - margin - stroke - pad;
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
