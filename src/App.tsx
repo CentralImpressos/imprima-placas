@@ -38,6 +38,7 @@ export default function App() {
   const [iconSvg, setIconSvg] = useState('');
   const [showIcon, setShowIcon] = useState(true);
   const [position, setPosition] = useState<PictogramPosition>(initialPreset.defaults?.pictogramPosition ?? 'top');
+  const [circle, setCircle] = useState(Boolean(initialPreset.defaults?.circle));
   const [prohibition, setProhibition] = useState(Boolean(initialPreset.defaults?.prohibition));
   const [frameColor, setFrameColor] = useState<CmykColor>(initialPreset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
   const [backgroundColor, setBackgroundColor] = useState<CmykColor>(initialPreset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 });
@@ -59,6 +60,7 @@ export default function App() {
     setMessage(preset.message);
     setIcon(preset.icon ?? 'mdi:alert');
     setShowIcon(preset.icon !== undefined);
+    setCircle(Boolean(preset.defaults?.circle));
     setProhibition(Boolean(preset.defaults?.prohibition));
     setPosition(preset.defaults?.pictogramPosition ?? 'top');
     setFrameColor(preset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
@@ -77,8 +79,8 @@ export default function App() {
     message,
     iconSvg,
     showIcon,
-    appearance: { frameColor, backgroundColor, prohibition, pictogramPosition: position },
-  }), [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, showIcon, frameColor, backgroundColor, prohibition, position]);
+    appearance: { frameColor, backgroundColor, circle, prohibition, pictogramPosition: position },
+  }), [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, showIcon, frameColor, backgroundColor, circle, prohibition, position]);
 
   const filteredPresets = SIGN_PRESETS.filter((item) => item.frameType === frameType);
   const exportPdf = async () => {
@@ -109,6 +111,7 @@ export default function App() {
           <IconSelector value={icon} showIcon={showIcon} onToggleShowIcon={setShowIcon} onSelectIcon={setIcon} />
           <label className="field-label">Posição</label>
           <select className="field-select" value={position} onChange={(event) => setPosition(event.target.value as PictogramPosition)}><option value="left">À esquerda do texto</option><option value="right">À direita do texto</option><option value="top">Centralizado acima</option></select>
+          <label className="check-row"><input type="checkbox" checked={circle} onChange={(event) => setCircle(event.target.checked)} /> Aplicar círculo</label>
           <label className="check-row prohibition"><input type="checkbox" checked={prohibition} onChange={(event) => setProhibition(event.target.checked)} /> Aplicar símbolo de proibição</label>
         </section>
         <section className="config-section"><h2>3. Cores CMYK</h2>

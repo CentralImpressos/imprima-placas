@@ -15,7 +15,13 @@ export type TemplateField = { id: string; label: string; type: TemplateFieldType
 export type PlateFieldValues = { heading: string; message: string; icon: string; showIcon: boolean; iconSvg?: string; };
 export type SignValue = string | boolean;
 export type SignValues = Record<string, SignValue>;
-export type SignAppearance = { frameColor: CmykColor; backgroundColor: CmykColor; prohibition: boolean; pictogramPosition: PictogramPosition; };
+export type SignAppearance = {
+  frameColor: CmykColor;
+  backgroundColor: CmykColor;
+  circle: boolean;
+  prohibition: boolean;
+  pictogramPosition: PictogramPosition;
+};
 export type SignPreset = { id: string; name: string; frameType: FrameType; heading?: string; message: string; icon?: string; defaults?: Partial<SignAppearance>; };
 export type SignRenderConfig = { frameType: FrameType; widthMm: number; heightMm: number; heading: string; message: string; iconSvg: string; showIcon: boolean; appearance: SignAppearance; };
 export type SignDefinition = { id: string; name: string; categoryId: string; templateId: string; fields?: TemplateField[]; defaultValues?: SignValues; };

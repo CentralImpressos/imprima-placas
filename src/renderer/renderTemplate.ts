@@ -35,19 +35,47 @@ function pointsString(points: Array<{ x: number; y: number }>) {
   return points.map((point) => `${point.x},${point.y}`).join(' ');
 }
 
-function iconElements(svg: string, x: number, y: number, scale: number, prohibition: boolean): GraphicElement[] {
+function iconElements(
+  svg: string,
+  x: number,
+  y: number,
+  scale: number,
+  circle: boolean,
+  prohibition: boolean,
+): GraphicElement[] {
   if (!svg) return [];
   const elements: GraphicElement[] = [{ type: 'icon', x, y, scale, color: '#000', svg }];
-  if (!prohibition) return elements;
 
   const radius = 11.5 * scale;
-  const prohibitionStroke = 2.2 * scale;
-  elements.push({ type: 'circle', cx: x, cy: y, r: radius, fill: 'none', stroke: 'rgb(220,0,0)', strokeWidth: prohibitionStroke });
-  elements.push({
-    type: 'group',
-    transform: `rotate(45 ${x} ${y})`,
-    children: [{ type: 'rect', x: x - prohibitionStroke / 2, y: y - radius, width: prohibitionStroke, height: radius * 2, fill: 'rgb(220,0,0)' }],
-  });
+  const ringStroke = 2.2 * scale;
+
+  if (circle || prohibition) {
+    elements.push({
+      type: 'circle',
+      cx: x,
+      cy: y,
+      r: radius,
+      fill: 'none',
+      stroke: 'rgb(220,0,0)',
+      strokeWidth: ringStroke,
+    });
+  }
+
+  if (prohibition) {
+    elements.push({
+      type: 'group',
+      transform: `rotate(45 ${x} ${y})`,
+      children: [{
+        type: 'rect',
+        x: x - ringStroke / 2,
+        y: y - radius,
+        width: ringStroke,
+        height: radius * 2,
+        fill: 'rgb(220,0,0)',
+      }],
+    });
+  }
+
   return elements;
 }
 
@@ -58,9 +86,9 @@ export function renderTemplate(config: SignRenderConfig): string {
   const frame = cmykToRgb(appearance.frameColor);
   const bg = cmykToRgb(appearance.backgroundColor);
   const s = scaleFor(w, h);
-  const margin = 3.5 * s;
+  const margin = 2.5 * s;
   const stroke = 2 * s;
-  const pad = 4 * s;
+  const pad = 3 * s;
   const elements: GraphicElement[] = [];
 
   if (frameType === 'simple' || frameType === 'header') {
@@ -99,7 +127,7 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   const contentTop = frameType === 'header' ? margin + 32 * s : margin + pad;
   const contentBottom = h - margin - pad;
-  const baseTextSize = clamp(11.5 * s, 9, 48);
+  const baseTextSize = clamp(12 * s, 9, 50);
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
   const isNonRectangular = frameType === 'circular' || frameType === 'diamond' || frameType === 'triangle';
   const usableWidth = isNonRectangular ? Math.min(w, h) - 2 * (margin + pad) : w - 2 * (margin + stroke + pad);
@@ -108,7 +136,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   const preliminaryMaxChars = Math.max(4, Math.floor(usableWidth / Math.max(1, 5.5 * s)));
   const preliminaryLines = wrap(config.message || '', preliminaryMaxChars);
   const textLineHeight = baseTextSize * 1.12;
-  const textGap = 6 * s;
+  const textGap = 5 * s;
 
   let textX = cx;
   let textY = (contentTop + contentBottom) / 2;
@@ -117,18 +145,17 @@ export function renderTemplate(config: SignRenderConfig): string {
   let finalLineHeight = textLineHeight;
   let finalIconScale = 3.8 * s;
 
+  const needsRing = appearance.circle || appearance.prohibition;
+
   if (hasIcon && appearance.pictogramPosition === 'top') {
-    // Anel maior e mais próximo da moldura, com menos respiro vertical.
-    const desiredRingScale = 3.1 * s;
+    const desiredRingScale = 3.4 * s;
     const ringScaleByWidth = usableWidth / (2 * 11.5 + 2.2);
     const ringScale = Math.min(desiredRingScale, ringScaleByWidth);
     const ringDiameter = (2 * 11.5 + 2.2) * ringScale;
 
-    // O pictograma fica confortável dentro do anel.
-    const iconMarginRatio = appearance.prohibition ? 0.68 : 1;
+    const iconMarginRatio = needsRing ? 0.68 : 1;
     const desiredIconScale = ringScale * iconMarginRatio;
 
-    // Encaixa o bloco (anel + gap + texto) na área útil disponível.
     finalLines = wrap(config.message || '', preliminaryMaxChars);
     let blockScale = 1;
 
@@ -159,7 +186,14 @@ export function renderTemplate(config: SignRenderConfig): string {
     textX = cx;
     textY = finalBlockTop + finalRingDiameter + textGap * blockScale + finalTextHeight / 2;
     const iconY = finalBlockTop + finalRingDiameter / 2;
-    const finalElements = iconElements(config.iconSvg, cx, iconY, finalIconScale, appearance.prohibition);
+    const finalElements = iconElements(
+      config.iconSvg,
+      cx,
+      iconY,
+      finalIconScale,
+      appearance.circle,
+      appearance.prohibition,
+    );
     elements.push(...finalElements);
   } else {
     if (hasIcon && appearance.pictogramPosition === 'left') {
@@ -167,13 +201,13 @@ export function renderTemplate(config: SignRenderConfig): string {
       textX = iconX + 28 * s;
       textY = (contentTop + contentBottom) / 2;
       finalIconScale = 3.8 * s;
-      elements.push(...iconElements(config.iconSvg, iconX, textY, finalIconScale, appearance.prohibition));
+      elements.push(...iconElements(config.iconSvg, iconX, textY, finalIconScale, appearance.circle, appearance.prohibition));
     } else if (hasIcon && appearance.pictogramPosition === 'right') {
       const iconX = w - margin - pad - 19 * s;
       textX = iconX - 28 * s;
       textY = (contentTop + contentBottom) / 2;
       finalIconScale = 3.8 * s;
-      elements.push(...iconElements(config.iconSvg, iconX, textY, finalIconScale, appearance.prohibition));
+      elements.push(...iconElements(config.iconSvg, iconX, textY, finalIconScale, appearance.circle, appearance.prohibition));
     }
 
     if (appearance.pictogramPosition !== 'top') {
