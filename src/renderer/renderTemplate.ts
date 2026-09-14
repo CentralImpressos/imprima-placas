@@ -55,8 +55,8 @@ function computeIconScale(blockWidth: number, needsRing: boolean, letterBoost: n
   if (needsRing) return (((blockWidth / 2) * 2 * 0.84 * 0.78) / 24) * letterBoost;
   return ((blockWidth * 0.92) / 24) * letterBoost;
 }
-// Barlow Semi Condensed Bold — fator um pouco conservador para não estourar a moldura.
-const CHAR_WIDTH_FACTOR = 0.56;
+// Barlow Semi Condensed Bold — fator calibrado para aproximar melhor a largura visual real.
+const CHAR_WIDTH_FACTOR = 0.50;
 
 function longestWordLen(message: string): number {
   return message.toUpperCase().split(/[\s\r\n]+/).filter(Boolean).reduce((max, word) => Math.max(max, word.length), 1);
