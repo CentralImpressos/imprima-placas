@@ -104,7 +104,6 @@ function maxContentRadius(
   stroke: number,
 ): number {
   if (frameType === 'diamond') {
-    // Losango com diagonal = size → inradius = size / (2√2)
     const size = Math.min(w, h);
     const inradius = size / (2 * Math.SQRT2);
     return Math.max(8, inradius - margin - pad - stroke * 0.5);
@@ -114,7 +113,6 @@ function maxContentRadius(
     return Math.max(8, outer - margin - pad - stroke * 0.5);
   }
   if (frameType === 'triangle') {
-    // Triângulo equilátero: inradius = altura / 3
     const inradius = h / 3;
     return Math.max(8, inradius - margin - pad - stroke * 0.5);
   }
@@ -184,7 +182,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   if (!message && hasIcon) {
     const centerY = frameType === 'triangle' ? h * (2 / 3) : (frameType === 'header' ? (contentTop + contentBottom) / 2 : cy);
     const maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
-    // Com anel: o diâmetro externo do anel = 2*maxR. Sem anel: pictograma quase preenche.
     const pictSize = needsRing ? maxR * 2 : maxR * 2 * 0.88;
     elements.push(...iconElements(
       config.iconSvg,
@@ -215,24 +212,33 @@ export function renderTemplate(config: SignRenderConfig): string {
     const minPict = Math.min(usableWidth * 0.35, layoutHeight * 0.22);
     const gap = 7 * s;
     let pictSize = preferredPict;
-    let textMaxH = Math.max(20, layoutHeight - pictSize - gap);
+    // Metade da espessura do anel “vaza” para fora do raio nominal.
+    const ringOut = (size: number) => (needsRing ? Math.max(1.8, (size / 2) * 0.16) * 0.5 : 0);
+    let textMaxH = Math.max(20, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
     let fitted = fitTextToTargetWidth(message, wordCount <= 2 ? Math.min(usableWidth, pictSize) : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
     let textH = fitted.lines.length * fitted.lineHeight;
-    let blockH = pictSize + gap + textH;
+    let pictExtent = pictSize + ringOut(pictSize) * 2;
+    let blockH = pictExtent + gap + textH;
     if (blockH > layoutHeight && pictSize > minPict) {
-      pictSize = clamp(layoutHeight - textH - gap, minPict, preferredPict);
-      textMaxH = Math.max(18, layoutHeight - pictSize - gap);
+      pictSize = clamp(layoutHeight - textH - gap - ringOut(preferredPict) * 2, minPict, preferredPict);
+      textMaxH = Math.max(18, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
       fitted = fitTextToTargetWidth(message, Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
       textH = fitted.lines.length * fitted.lineHeight;
-      blockH = pictSize + gap + textH;
+      pictExtent = pictSize + ringOut(pictSize) * 2;
+      blockH = pictExtent + gap + textH;
     }
     const groupScale = blockH > layoutHeight ? layoutHeight / blockH : 1;
     pictSize *= groupScale;
     fitted = { lines: fitted.lines, fontSize: Math.max(8, fitted.fontSize * groupScale), lineHeight: Math.max(9, fitted.lineHeight * groupScale) };
     textH = fitted.lines.length * fitted.lineHeight;
-    const blockTop = layoutTop + (layoutHeight - (pictSize + gap * groupScale + textH)) / 2;
-    const iconY = blockTop + pictSize / 2;
-    textY = blockTop + pictSize + gap * groupScale + textH / 2;
+    pictExtent = pictSize + ringOut(pictSize) * 2;
+    blockH = pictExtent + gap * groupScale + textH;
+    const free = Math.max(0, layoutHeight - blockH);
+    // Com anel no cabeçalho, o círculo vermelho pesa visualmente: deixa um pouco mais de ar sob a faixa.
+    const topShare = (frameType === 'header' && needsRing) ? 0.58 : 0.5;
+    const blockTop = layoutTop + free * topShare;
+    const iconY = blockTop + ringOut(pictSize) + pictSize / 2;
+    textY = blockTop + pictExtent + gap * groupScale + textH / 2;
     textX = contentCenterX;
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
     elements.push(...iconElements(config.iconSvg, contentCenterX, iconY, computeIconScale(pictSize, needsRing, letterBoost), needsRing ? pictSize / 2 : 0, appearance.circle, appearance.prohibition, iconRgb));
@@ -288,7 +294,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY = layoutTop + (layoutHeight - textH) / 2 + textH / 2;
   }
 
-  // Shift ótico só na moldura simples (no cabeçalho apertava a margem inferior).
   if (message && frameType === 'simple') {
     textY += 3 * s;
   }
