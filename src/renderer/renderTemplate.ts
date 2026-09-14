@@ -36,7 +36,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     const d = Math.min(w, h) / 2 - margin; elements.push({ type: 'polygon', points: `${cx},${cy-d} ${cx+d},${cy} ${cx},${cy+d} ${cx-d},${cy}`, fill: bg, stroke: frame, strokeWidth: stroke });
   }
   if (frameType === 'triangle') {
-    const d = Math.min(w, h) / 2 - margin; const top = margin; const baseY = h - margin; elements.push({ type: 'polygon', points: `${cx},${top} ${w-margin},${baseY} ${margin},${baseY}`, fill: bg, stroke: frame, strokeWidth: stroke });
+    const top = margin; const baseY = h - margin; elements.push({ type: 'polygon', points: `${cx},${top} ${w-margin},${baseY} ${margin},${baseY}`, fill: bg, stroke: frame, strokeWidth: stroke });
   }
 
   const contentTop = frameType === 'header' ? margin + 32 * s : margin + pad;
@@ -45,7 +45,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   const textGap = 7 * s; const textSize = clamp(10 * s, 8, 42); const lineH = textSize * 1.12;
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
   let textX = cx, textY = (contentTop + contentBottom) / 2;
-  let iconX = cx, iconY = contentTop + (contentBottom - contentTop) * 0.34, iconScale = 3.8 * s;
+  let iconX = cx, iconY = contentTop + (contentBottom - contentTop) * 0.34; const iconScale = 3.8 * s;
   const blockH = lines.length * lineH;
 
   if (hasIcon && appearance.pictogramPosition === 'top') {
@@ -61,9 +61,8 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   if (appearance.prohibition) {
     const pr = Math.min(w, h) * 0.29; const pcx = appearance.pictogramPosition === 'left' ? w * 0.28 : appearance.pictogramPosition === 'right' ? w * 0.72 : cx; const pcy = appearance.pictogramPosition === 'top' ? contentTop + pr : cy;
-    const ps = 3.8 * s; const prStroke = 5 * s; elements.push({ type: 'circle', cx: pcx, cy: pcy, r: pr, fill: 'none', stroke: 'rgb(220,0,0)', strokeWidth: prStroke });
+    const prStroke = 5 * s; elements.push({ type: 'circle', cx: pcx, cy: pcy, r: pr, fill: 'none', stroke: 'rgb(220,0,0)', strokeWidth: prStroke });
     elements.push({ type: 'group', transform: `rotate(45 ${pcx} ${pcy})`, children: [{ type: 'rect', x: pcx - prStroke / 2, y: pcy - pr, width: prStroke, height: pr * 2, fill: 'rgb(220,0,0)' }] });
-    void ps;
   }
   const composition: Composition = { widthMm: w, heightMm: h, elements };
   return renderCompositionToSvg(composition);
