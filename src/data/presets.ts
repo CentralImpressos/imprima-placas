@@ -4,7 +4,9 @@ export const DEFAULT_FRAME_COLOR = { c: 0, m: 0, y: 0, k: 100 };
 export const DEFAULT_BLUE = { c: 100, m: 70, y: 0, k: 0 };
 export const DEFAULT_RED = { c: 0, m: 100, y: 100, k: 0 };
 export const DEFAULT_YELLOW = { c: 0, m: 15, y: 100, k: 0 };
+export const DEFAULT_YELLOW_PURE = { c: 0, m: 0, y: 100, k: 0 };
 export const DEFAULT_GREEN = { c: 85, m: 0, y: 80, k: 10 };
+export const DEFAULT_BLACK = { c: 0, m: 0, y: 0, k: 100 };
 
 export const SIGN_PRESETS: SignPreset[] = [
   {
@@ -24,7 +26,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     icon: 'mdi:dog',
     defaults: {
       frameColor: DEFAULT_FRAME_COLOR,
-      pictogramPosition: 'left',
+      pictogramPosition: 'top',
       circle: true,
       prohibition: true,
     },
@@ -36,7 +38,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'CRIANÇAS SOMENTE ACOMPANHADAS DE UM RESPONSÁVEL',
     icon: 'mdi:account-child',
-    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'top' },
   },
   {
     id: 'ducha-piscina',
@@ -45,7 +47,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'OBRIGATÓRIO PASSAR PELA DUCHA ANTES DE ENTRAR NA PISCINA',
     icon: 'mdi:shower',
-    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'top' },
   },
   {
     id: 'proibido-nadar',
@@ -62,7 +64,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'PISCINA EM MANUTENÇÃO',
     icon: 'mdi:pool',
-    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'top' },
   },
   {
     id: 'velocidade-20',
@@ -71,7 +73,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'VELOCIDADE MÁXIMA PERMITIDA\n20 km/h',
     icon: 'mdi:speedometer',
-    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'top' },
   },
   {
     id: 'reciclagem',
@@ -91,12 +93,20 @@ export const SIGN_PRESETS: SignPreset[] = [
     defaults: { frameColor: DEFAULT_YELLOW, backgroundColor: DEFAULT_YELLOW },
   },
   {
-    id: 'proibido-estacionar',
-    name: 'Proibido Estacionar',
+    id: 'risco-eletrico',
+    name: 'Risco Elétrico',
     frameType: 'diamond',
-    message: 'PROIBIDO\nESTACIONAR',
-    icon: 'mdi:alpha-e',
-    defaults: { circle: true, prohibition: true, frameColor: DEFAULT_RED },
+    message: '',
+    icon: 'mdi:flash',
+    defaults: {
+      frameEnabled: true,
+      circle: false,
+      prohibition: false,
+      frameColor: DEFAULT_BLACK,
+      backgroundColor: DEFAULT_YELLOW_PURE,
+      iconColor: DEFAULT_BLACK,
+      pictogramPosition: 'top',
+    },
   },
 ];
 

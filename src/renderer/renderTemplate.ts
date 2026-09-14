@@ -94,6 +94,33 @@ function fitTextToTargetWidth(message: string, targetWidthMm: number, maxWidthMm
   return fitted;
 }
 
+/** Raio máximo do conteúdo (pictograma ou anel) dentro da forma geométrica. */
+function maxContentRadius(
+  frameType: SignRenderConfig['frameType'],
+  w: number,
+  h: number,
+  margin: number,
+  pad: number,
+  stroke: number,
+): number {
+  if (frameType === 'diamond') {
+    // Losango com diagonal = size → inradius = size / (2√2)
+    const size = Math.min(w, h);
+    const inradius = size / (2 * Math.SQRT2);
+    return Math.max(8, inradius - margin - pad - stroke * 0.5);
+  }
+  if (frameType === 'circular') {
+    const outer = Math.min(w, h) / 2;
+    return Math.max(8, outer - margin - pad - stroke * 0.5);
+  }
+  if (frameType === 'triangle') {
+    // Triângulo equilátero: inradius = altura / 3
+    const inradius = h / 3;
+    return Math.max(8, inradius - margin - pad - stroke * 0.5);
+  }
+  return Math.min(w, h) / 2 - margin - pad;
+}
+
 export function renderTemplate(config: SignRenderConfig): string {
   const geometry = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
   const { width: w, height: h, centerX: cx, centerY: cy } = geometry;
@@ -139,8 +166,10 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (hasOptionalFrame) elements.push({ type: 'polygon', points: pointsString(insetPolygon(outerPoints, margin)), fill: 'none', stroke: frame, strokeWidth: stroke, strokeLinejoin: 'round' });
   }
 
+  // Cabeçalho: respiro inferior ~5.5% da altura da placa (mín. 2× pad).
+  const headerBottomPad = Math.max(pad * 2.2, h * 0.055);
   const contentTop = frameType === 'header' ? margin + 30 * s : margin + pad;
-  const contentBottom = frameType === 'header' ? h - margin : h - margin - pad;
+  const contentBottom = frameType === 'header' ? h - margin - headerBottomPad : h - margin - pad;
   const contentLeft = margin + stroke + pad;
   const contentRight = w - margin - stroke - pad;
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
@@ -155,12 +184,23 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   if (!message && hasIcon) {
     const centerY = frameType === 'triangle' ? h * (2 / 3) : (frameType === 'header' ? (contentTop + contentBottom) / 2 : cy);
-    const pictSize = Math.min(usableWidth * 0.78, usableHeight * 0.78);
-    elements.push(...iconElements(config.iconSvg, isNonRectangular ? cx : contentCenterX, centerY, computeIconScale(pictSize, needsRing, letterBoost), needsRing ? pictSize / 2 : 0, appearance.circle, appearance.prohibition, iconRgb));
+    const maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
+    // Com anel: o diâmetro externo do anel = 2*maxR. Sem anel: pictograma quase preenche.
+    const pictSize = needsRing ? maxR * 2 : maxR * 2 * 0.88;
+    elements.push(...iconElements(
+      config.iconSvg,
+      isNonRectangular ? cx : contentCenterX,
+      centerY,
+      computeIconScale(pictSize, needsRing, letterBoost),
+      needsRing ? pictSize / 2 : 0,
+      appearance.circle,
+      appearance.prohibition,
+      iconRgb,
+    ));
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
 
-  const layoutSafeGap = 3 * s;
+  const layoutSafeGap = frameType === 'header' ? 4 * s : 3 * s;
   const layoutTop = contentTop + layoutSafeGap;
   const layoutBottom = contentBottom - layoutSafeGap;
   const layoutHeight = Math.max(1, layoutBottom - layoutTop);
@@ -249,7 +289,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY = layoutTop + (layoutHeight - textH) / 2 + textH / 2;
   }
 
-  if (message && (frameType === 'simple' || frameType === 'header')) {
+  // Shift ótico só na moldura simples (no cabeçalho apertava a margem inferior).
+  if (message && frameType === 'simple') {
     textY += 3 * s;
   }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
