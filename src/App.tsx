@@ -5,6 +5,7 @@ import { renderIcon } from './renderer/renderIcon';
 import { renderTemplate } from './renderer/renderTemplate';
 import { SIGN_PRESETS, DEFAULT_FRAME_COLOR } from './data/presets';
 import { PLATE_SIZES } from './data/sizes';
+import { IconSelector } from './components/IconSelector';
 import type { CmykColor, FrameType, PictogramPosition } from './types';
 
 const FRAME_OPTIONS: Array<[FrameType, string]> = [
@@ -103,9 +104,9 @@ export default function App() {
         </section>
         <section className="config-section"><h2>2. Conteúdo</h2>
           {frameType === 'header' && <><label className="field-label">Cabeçalho</label><input className="field-input" value={heading} onChange={(event) => setHeading(event.target.value)} /></>}
-          <label className="field-label">Texto</label><textarea className="field-textarea" value={message} onChange={(event) => setMessage(event.target.value)} />
-          <label className="field-label">Pictograma</label><input className="field-input" value={icon} onChange={(event) => setIcon(event.target.value)} placeholder="mdi:alert" />
-          <label className="check-row"><input type="checkbox" checked={showIcon} onChange={(event) => setShowIcon(event.target.checked)} /> Mostrar pictograma</label>
+          <label className="field-label">Texto</label>
+          <textarea className="field-textarea" value={message} onChange={(event) => setMessage(event.target.value)} />
+          <IconSelector value={icon} showIcon={showIcon} onToggleShowIcon={setShowIcon} onSelectIcon={setIcon} />
           <label className="field-label">Posição</label>
           <select className="field-select" value={position} onChange={(event) => setPosition(event.target.value as PictogramPosition)}><option value="left">À esquerda do texto</option><option value="right">À direita do texto</option><option value="top">Centralizado acima</option></select>
           <label className="check-row prohibition"><input type="checkbox" checked={prohibition} onChange={(event) => setProhibition(event.target.checked)} /> Aplicar símbolo de proibição</label>
