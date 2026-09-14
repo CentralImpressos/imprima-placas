@@ -124,7 +124,10 @@ export function renderTemplate(config: SignRenderConfig): string {
       elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
       const headerLines = headingFit.lines.filter(Boolean);
       const headerLineH = headingFit.lineHeight;
-      headerLines.forEach((line, index) => elements.push({ type: 'text', x: cx, y: margin + headerH / 2 + (index - (headerLines.length - 1) / 2) * headerLineH, text: line, fontSize: headingFit.fontSize, fontWeight: 800, fill: bg, fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: 'middle', dominantBaseline: 'middle' }));
+      headerLines.forEach((line, index) => {
+        const opticalHeaderShift = headerLines.length === 1 ? 1 * s : 0.5 * s;
+        elements.push({ type: 'text', x: cx, y: margin + headerH / 2 + opticalHeaderShift + (index - (headerLines.length - 1) / 2) * headerLineH, text: line, fontSize: headingFit.fontSize, fontWeight: 800, fill: bg, fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: 'middle', dominantBaseline: 'middle' });
+      });
     }
   } else if (frameType === 'circular') {
     const outerRadius = geometry.radius!;
@@ -147,7 +150,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   const contentCenterX = (contentLeft + contentRight) / 2;
   const needsRing = appearance.circle || appearance.prohibition;
   const position = appearance.pictogramPosition;
-  const letterBoost = isLetterSlug(config.iconSlug) ? 1.6 : 1;
+  const letterBoost = isLetterSlug(config.iconSlug) ? 1.92 : 1;
   const message = config.message.trim();
 
   if (!message && hasIcon) {
@@ -243,7 +246,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   }
 
   if (message && (frameType === 'simple' || frameType === 'header')) {
-    textY += 1.5 * s;
+    textY += 3 * s;
   }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
   finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight, text: line, fontSize: finalFontSize, fontWeight: 800, fill: '#000', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
