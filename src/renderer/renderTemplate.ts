@@ -90,7 +90,26 @@ function isLetterSlug(slug?: string): boolean {
   return /mdi:alpha-[a-z](?:-|$)/i.test(slug) || /letter-/i.test(slug);
 }
 
-/** Estimativa de largura de um glifo em Barlow Semi Condensed (bold). */
+/**
+ * Escala do pictograma (viewBox 24x24).
+ * Com anel: ~78% do diâmetro interno.
+ * Sem anel: ~92% do bloco de referência (maior).
+ * Letras alpha-* recebem boost extra (glyph com muito padding).
+ */
+function computeIconScale(
+  blockWidth: number,
+  needsRing: boolean,
+  letterBoost: number,
+): number {
+  if (needsRing) {
+    const ringRadius = blockWidth / 2;
+    const innerDiameter = ringRadius * 2 * 0.84;
+    return ((innerDiameter * 0.78) / 24) * letterBoost;
+  }
+  // Sem círculo/proibição: ocupa quase todo o bloco.
+  return ((blockWidth * 0.92) / 24) * letterBoost;
+}
+
 const CHAR_WIDTH_FACTOR = 0.56;
 
 export function renderTemplate(config: SignRenderConfig): string {
@@ -163,17 +182,13 @@ export function renderTemplate(config: SignRenderConfig): string {
   const needsRing = appearance.circle || appearance.prohibition;
   const textGap = 6 * s;
   const position = appearance.pictogramPosition;
+  const letterBoost = isLetterSlug(config.iconSlug) ? 1.6 : 1;
 
   // Bloco de referência do pictograma (topo).
   const targetBlockWidth = Math.min(usableWidth * 0.72, usableHeight * 0.55);
   const ringRadius = targetBlockWidth / 2;
+  const iconScale = computeIconScale(targetBlockWidth, needsRing, letterBoost);
 
-  const innerDiameter = ringRadius * 2 * 0.84;
-  const letterBoost = isLetterSlug(config.iconSlug) ? 1.3 : 1;
-  const iconScale = ((innerDiameter * 0.78) / 24) * letterBoost;
-
-  // Texto no topo: um pouco mais largo que o diâmetro externo do anel.
-  // 0.26 * D e CHAR_WIDTH_FACTOR 0.56 → ~8 chars cobrem ≥ diâmetro.
   const textWidthTarget = targetBlockWidth * 1.08;
   let finalLines = wrap(config.message || '', Math.max(4, Math.floor(textWidthTarget / Math.max(1, 5.0 * s))));
   let finalFontSize = clamp(textWidthTarget * 0.26, 12, 56);
@@ -205,7 +220,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     finalFontSize = Math.max(12, finalFontSize * blockScale);
     finalLineHeight = finalFontSize * 1.12;
 
-    // Largura alvo do texto = diâmetro externo do anel * 1.08
     const outerDiameter = finalRingRadius * 2;
     const textTarget = outerDiameter * 1.08;
     finalLines = wrap(
@@ -232,22 +246,22 @@ export function renderTemplate(config: SignRenderConfig): string {
       appearance.prohibition,
     ));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    // Lado: pictograma limitado pela altura útil e por uma fração da largura.
-    const sideRingRadius = Math.min(
-      usableHeight * 0.38,
-      usableWidth * 0.28,
-      ringRadius,
+    // Lado: bloco do pictograma limitado por altura e largura.
+    const sideBlock = Math.min(
+      usableHeight * 0.42,
+      usableWidth * 0.32,
+      targetBlockWidth,
     );
-    const sideInnerDiameter = sideRingRadius * 2 * 0.84;
-    const sideIconScale = ((sideInnerDiameter * 0.78) / 24) * letterBoost;
+    const sideRingRadius = sideBlock / 2;
+    const sideIconScale = computeIconScale(sideBlock, needsRing, letterBoost);
     finalRingRadius = sideRingRadius;
     finalIconScale = sideIconScale;
 
-    const gap = 10 * s;
-    const pictBlock = sideRingRadius * 2;
+    const gap = 12 * s;
+    const pictBlock = sideBlock;
     const textAreaWidth = Math.max(40 * s, usableWidth - pictBlock - gap);
 
-    finalFontSize = clamp(Math.min(textAreaWidth * 0.14, usableHeight * 0.12), 10, 42);
+    finalFontSize = clamp(Math.min(textAreaWidth * 0.15, usableHeight * 0.14), 11, 44);
     finalLineHeight = finalFontSize * 1.12;
     finalLines = wrap(
       config.message || '',
@@ -257,11 +271,14 @@ export function renderTemplate(config: SignRenderConfig): string {
     const textBlockH = finalLines.length * finalLineHeight;
     const contentMidY = (contentTop + contentBottom) / 2;
 
-    // Centraliza o par ícone+texto na altura útil.
+    // Centraliza ícone e texto como um único bloco vertical.
     const pairH = Math.max(pictBlock, textBlockH);
-    const pairTop = contentMidY - pairH / 2;
-    const iconY = pairTop + pairH / 2;
-    textY = pairTop + pairH / 2;
+    const iconY = contentMidY;
+    textY = contentMidY;
+
+    // Se o texto for bem mais baixo que o ícone, mantém ambos no centro.
+    // Se o texto for mais alto, o ícone continua centrado no par.
+    void pairH;
 
     if (position === 'left') {
       const iconX = margin + pad + sideRingRadius;
@@ -289,7 +306,6 @@ export function renderTemplate(config: SignRenderConfig): string {
       ));
     }
   } else {
-    // Só texto, sem pictograma.
     finalLines = wrap(config.message || '', Math.max(4, Math.floor(usableWidth / Math.max(1, 5.5 * s))));
     finalFontSize = clamp(12 * s, 12, 56);
     finalLineHeight = finalFontSize * 1.12;
