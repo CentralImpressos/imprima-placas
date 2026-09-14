@@ -82,9 +82,10 @@ function iconElements(
   }
 
   if (prohibition) {
+    // Barra da esquerda (cima) para a direita (baixo) — padrão de proibição.
     elements.push({
       type: 'group',
-      transform: `rotate(45 ${x} ${y})`,
+      transform: `rotate(-45 ${x} ${y})`,
       children: [{
         type: 'rect',
         x: x - ringStroke / 2,
@@ -216,7 +217,6 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     if (frameType === 'header') {
       const headerH = 28 * s;
-      // Margens laterais menores para o texto preencher melhor a faixa.
       const headerPadX = 3 * s;
       const headerMaxW = Math.max(20, inner.width - headerPadX * 2);
       const headingText = (config.heading || 'AVISO').toUpperCase();
@@ -226,7 +226,6 @@ export function renderTemplate(config: SignRenderConfig): string {
 
       elements.push({ type: 'rect', x: margin, y: margin, width: inner.width, height: headerH, fill: frame, rx: 4 * s, ry: 4 * s });
       elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
-      // Texto do cabeçalho sempre na cor do fundo.
       elements.push({
         type: 'text',
         x: cx,
