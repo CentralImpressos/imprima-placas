@@ -53,7 +53,7 @@ function iconElements(svg: string, x: number, y: number, scale: number, prohibit
 
 export function renderTemplate(config: SignRenderConfig): string {
   const geometry = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
-  const { width: w, height: h, centerX: cx, centerY: cy } = geometry;
+  const { width: w, height: h, centerX: cx } = geometry;
   const { frameType, appearance } = config;
   const frame = cmykToRgb(appearance.frameColor);
   const bg = cmykToRgb(appearance.backgroundColor);
@@ -65,10 +65,6 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   if (frameType === 'simple' || frameType === 'header') {
     elements.push({ type: 'rect', x: 0, y: 0, width: w, height: h, fill: bg });
-
-    // Technical outer border: 0.5 mm, C0 M0 Y0 K30.
-    // It sits at the very edge and is intentionally independent from the
-    // main black/color frame.
     elements.push({
       type: 'rect',
       x: 0.25,
@@ -92,8 +88,8 @@ export function renderTemplate(config: SignRenderConfig): string {
   } else if (frameType === 'circular') {
     const outerRadius = geometry.radius!;
     const borderRadius = outerRadius - margin;
-    elements.push({ type: 'circle', cx, cy, r: outerRadius, fill: bg });
-    elements.push({ type: 'circle', cx, cy, r: borderRadius, fill: 'none', stroke: frame, strokeWidth: stroke });
+    elements.push({ type: 'circle', cx, cy: geometry.centerY, r: outerRadius, fill: bg });
+    elements.push({ type: 'circle', cx, cy: geometry.centerY, r: borderRadius, fill: 'none', stroke: frame, strokeWidth: stroke });
   } else if (frameType === 'diamond' || frameType === 'triangle') {
     const outerPoints = geometry.points!;
     const borderPoints = insetPolygon(outerPoints, margin);
@@ -116,77 +112,78 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   let textX = cx;
   let textY = (contentTop + contentBottom) / 2;
-  let iconX = cx;
-  let iconY = contentTop + 24 * s;
   let finalLines = preliminaryLines;
   let finalFontSize = baseTextSize;
   let finalLineHeight = textLineHeight;
   let finalIconScale = 3.8 * s;
 
   if (hasIcon && appearance.pictogramPosition === 'top') {
-    // The complete visual content is one block. Its bounding box is fitted
-    // against BOTH safe width and safe height before it is centered.
-    const symbolMaxScaleByWidth = appearance.prohibition
-      ? usableWidth / (2 * 11.5 + 2.2)
-      : usableWidth / 24;
-    const desiredSymbolScale = 3.8 * s;
-    const symbolBaseScale = Math.min(desiredSymbolScale, symbolMaxScaleByWidth);
-    const symbolDiameter = appearance.prohibition
-      ? (2 * 11.5 + 2.2) * symbolBaseScale
-      : 24 * symbolBaseScale;
+    // The ring is intentionally smaller than the available width. This leaves
+    // a visual breathing room between the prohibition symbol and the frame.
+    const desiredRingScale = 2.2 * s;
+    const ringScaleByWidth = usableWidth / (2 * 11.5 + 2.2);
+    const ringScale = Math.min(desiredRingScale, ringScaleByWidth);
+    const ringDiameter = (2 * 11.5 + 2.2) * ringScale;
 
-    // Use the available width to wrap the text before calculating its height.
-    const maxTextChars = Math.max(4, Math.floor(usableWidth / Math.max(1, 5.5 * s)));
-    finalLines = wrap(config.message || '', maxTextChars);
+    // The pictogram itself must sit comfortably inside the ring. Its 24x24
+    // viewBox is deliberately smaller than the ring's inner diameter.
+    const iconMarginRatio = appearance.prohibition ? 0.68 : 1;
+    const desiredIconScale = ringScale * iconMarginRatio;
 
-    // The symbol and text are scaled together. The fit is deliberately
-    // conservative so the final text still has a healthy visual margin.
-    const estimatedTextWidth = Math.max(1, ...finalLines.map((line) => line.length * baseTextSize * 0.52));
-    const baseBlockWidth = Math.max(symbolDiameter, estimatedTextWidth);
-    const baseBlockHeight = symbolDiameter + textGap + finalLines.length * textLineHeight;
-    const blockScale = Math.min(
-      1,
-      usableWidth / Math.max(1, baseBlockWidth),
-      usableHeight / Math.max(1, baseBlockHeight),
-    );
+    // Wrap first, then fit the complete symbol + gap + text block to the
+    // available area. The text is allowed to use the full safe width.
+    finalLines = wrap(config.message || '', preliminaryMaxChars);
+    let blockScale = 1;
 
-    finalIconScale = Math.max(0.25, symbolBaseScale * blockScale);
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+      const scaledRingDiameter = ringDiameter * blockScale;
+      const scaledFontSize = Math.max(8, baseTextSize * blockScale);
+      const scaledLineHeight = Math.max(scaledFontSize * 1.06, textLineHeight * blockScale);
+      const estimatedTextWidth = Math.max(1, ...finalLines.map((line) => line.length * scaledFontSize * 0.52));
+      const blockWidth = Math.max(scaledRingDiameter, estimatedTextWidth);
+      const blockHeight = scaledRingDiameter + textGap * blockScale + finalLines.length * scaledLineHeight;
+      const nextScale = Math.min(
+        1,
+        usableWidth / Math.max(1, blockWidth),
+        usableHeight / Math.max(1, blockHeight),
+      );
+      blockScale = Math.min(blockScale, nextScale);
+    }
+
+    finalIconScale = Math.max(0.25, desiredIconScale * blockScale);
     finalFontSize = Math.max(8, baseTextSize * blockScale);
     finalLineHeight = Math.max(finalFontSize * 1.06, textLineHeight * blockScale);
 
-    // Re-wrap after the global scale is known. More lines reduce the global
-    // scale on the next calculation, never allowing the block to overflow.
-    const effectiveCharWidth = Math.max(1, 5.5 * s * blockScale);
-    const fittedMaxChars = Math.max(4, Math.floor(usableWidth / effectiveCharWidth));
-    finalLines = wrap(config.message || '', fittedMaxChars);
-
-    const finalSymbolDiameter = appearance.prohibition
-      ? (2 * 11.5 + 2.2) * finalIconScale
-      : 24 * finalIconScale;
+    const finalRingDiameter = ringDiameter * blockScale;
     const finalTextHeight = finalLines.length * finalLineHeight;
-    const finalBlockHeight = finalSymbolDiameter + textGap * blockScale + finalTextHeight;
+    const finalBlockHeight = finalRingDiameter + textGap * blockScale + finalTextHeight;
     const finalBlockTop = contentTop + Math.max(0, (usableHeight - finalBlockHeight) / 2);
 
-    iconX = cx;
-    iconY = finalBlockTop + finalSymbolDiameter / 2;
     textX = cx;
-    textY = finalBlockTop + finalSymbolDiameter + textGap * blockScale + finalTextHeight / 2;
-  } else if (hasIcon && appearance.pictogramPosition === 'left') {
-    iconX = margin + pad + 19 * s;
-    textX = iconX + 28 * s;
-    textY = (contentTop + contentBottom) / 2;
-  } else if (hasIcon && appearance.pictogramPosition === 'right') {
-    iconX = w - margin - pad - 19 * s;
-    textX = iconX - 28 * s;
-    textY = (contentTop + contentBottom) / 2;
-  }
+    textY = finalBlockTop + finalRingDiameter + textGap * blockScale + finalTextHeight / 2;
+    const iconY = finalBlockTop + finalRingDiameter / 2;
+    const finalElements = iconElements(config.iconSvg, cx, iconY, finalIconScale, appearance.prohibition);
+    elements.push(...finalElements);
+  } else {
+    if (hasIcon && appearance.pictogramPosition === 'left') {
+      const iconX = margin + pad + 19 * s;
+      textX = iconX + 28 * s;
+      textY = (contentTop + contentBottom) / 2;
+      finalIconScale = 3.8 * s;
+      elements.push(...iconElements(config.iconSvg, iconX, textY, finalIconScale, appearance.prohibition));
+    } else if (hasIcon && appearance.pictogramPosition === 'right') {
+      const iconX = w - margin - pad - 19 * s;
+      textX = iconX - 28 * s;
+      textY = (contentTop + contentBottom) / 2;
+      finalIconScale = 3.8 * s;
+      elements.push(...iconElements(config.iconSvg, iconX, textY, finalIconScale, appearance.prohibition));
+    }
 
-  if (hasIcon) elements.push(...iconElements(config.iconSvg, iconX, iconY, finalIconScale, appearance.prohibition));
-
-  if (appearance.pictogramPosition !== 'top') {
-    const sideReduction = appearance.pictogramPosition === 'left' || appearance.pictogramPosition === 'right' ? 36 * s : 0;
-    const maxTextWidth = Math.max(35 * s, usableWidth - sideReduction);
-    finalLines = wrap(config.message || '', Math.max(4, Math.floor(maxTextWidth / Math.max(1, 5.5 * s))));
+    if (appearance.pictogramPosition !== 'top') {
+      const sideReduction = appearance.pictogramPosition === 'left' || appearance.pictogramPosition === 'right' ? 36 * s : 0;
+      const maxTextWidth = Math.max(35 * s, usableWidth - sideReduction);
+      finalLines = wrap(config.message || '', Math.max(4, Math.floor(maxTextWidth / Math.max(1, 5.5 * s))));
+    }
   }
 
   const textAnchor = appearance.pictogramPosition === 'left' ? 'start' : appearance.pictogramPosition === 'right' ? 'end' : 'middle';
