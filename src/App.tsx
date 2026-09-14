@@ -13,14 +13,14 @@ const DEFAULT_ICON_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
 const DEFAULT_SYMBOL_COLOR: CmykColor = { c: 0, m: 100, y: 100, k: 0 };
 const DEFAULT_TEXT_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
 const CMYK_PRESETS: Array<{ name: string; color: CmykColor; hex: string }> = [
-  { name: 'Preto', color: { c: 0, m: 0, y: 0, k: 100 }, hex: '#000000' },
-  { name: 'Azul', color: { c: 100, m: 80, y: 0, k: 0 }, hex: '#0033FF' },
-  { name: 'Vermelho', color: { c: 0, m: 100, y: 100, k: 0 }, hex: '#FF0000' },
-  { name: 'Amarelo', color: { c: 0, m: 0, y: 100, k: 0 }, hex: '#FFFF00' },
-  { name: 'Verde', color: { c: 100, m: 0, y: 100, k: 0 }, hex: '#00FF00' },
-  { name: 'Branco', color: { c: 0, m: 0, y: 0, k: 0 }, hex: '#FFFFFF' },
-  { name: 'Ciano', color: { c: 100, m: 0, y: 0, k: 0 }, hex: '#00FFFF' },
-  { name: 'Magenta', color: { c: 0, m: 100, y: 0, k: 0 }, hex: '#FF00FF' },
+  { name: 'Preto',   color: { c: 0,   m: 0,   y: 0,   k: 100 }, hex: '#000000' },
+  { name: 'Branco',  color: { c: 0,   m: 0,   y: 0,   k: 0   }, hex: '#FFFFFF' },
+  { name: 'Azul',    color: { c: 100, m: 100, y: 0,   k: 0   }, hex: '#2E3092' },
+  { name: 'Ciano',   color: { c: 100, m: 0,   y: 0,   k: 0   }, hex: '#00AEEF' },
+  { name: 'Verde',   color: { c: 100, m: 0,   y: 100, k: 0   }, hex: '#00A651' },
+  { name: 'Amarelo', color: { c: 0,   m: 0,   y: 100, k: 0   }, hex: '#FFF200' },
+  { name: 'Vermelho',color: { c: 0,   m: 100, y: 100, k: 0   }, hex: '#ED1C24' },
+  { name: 'Magenta', color: { c: 0,   m: 100, y: 0,   k: 0   }, hex: '#EC008C' },
 ];
 const clamp = (n: number) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
 const TRIANGLE_SIDES = [100, 150, 200, 300, 400, 500, 600, 700, 800];
