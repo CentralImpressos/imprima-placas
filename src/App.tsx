@@ -62,7 +62,11 @@ export default function App() {
     setShowIcon(preset.icon !== undefined);
     setCircle(Boolean(preset.defaults?.circle));
     setProhibition(Boolean(preset.defaults?.prohibition));
-    setPosition(preset.defaults?.pictogramPosition ?? 'top');
+    // Cabeçalho: padrão pictograma à esquerda.
+    const defaultPos: PictogramPosition = preset.frameType === 'header'
+      ? (preset.defaults?.pictogramPosition ?? 'left')
+      : (preset.defaults?.pictogramPosition ?? 'top');
+    setPosition(defaultPos);
     setFrameColor(preset.defaults?.frameColor ?? DEFAULT_FRAME_COLOR);
     setBackgroundColor(preset.defaults?.backgroundColor ?? { c: 0, m: 0, y: 0, k: 0 });
   }, [preset]);
@@ -93,6 +97,10 @@ export default function App() {
     setFrameType(next);
     const nextPreset = SIGN_PRESETS.find((item) => item.frameType === next);
     if (nextPreset) setPresetId(nextPreset.id);
+    // Ao mudar para cabeçalho, força posição esquerda se o preset não definir outra.
+    if (next === 'header') {
+      setPosition(nextPreset?.defaults?.pictogramPosition ?? 'left');
+    }
   };
 
   return <div className="app-shell">

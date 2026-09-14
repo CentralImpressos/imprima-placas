@@ -22,7 +22,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'É PROIBIDA A ENTRADA DE ANIMAIS',
     icon: 'mdi:dog',
-    defaults: { frameColor: DEFAULT_FRAME_COLOR },
+    defaults: { frameColor: DEFAULT_FRAME_COLOR, pictogramPosition: 'left' },
   },
   {
     id: 'criancas-acompanhadas',
@@ -31,7 +31,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'CRIANÇAS SOMENTE ACOMPANHADAS DE UM RESPONSÁVEL',
     icon: 'mdi:account-child',
-    defaults: { frameColor: DEFAULT_BLUE },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
   },
   {
     id: 'ducha-piscina',
@@ -40,7 +40,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'OBRIGATÓRIO PASSAR PELA DUCHA ANTES DE ENTRAR NA PISCINA',
     icon: 'mdi:shower',
-    defaults: { frameColor: DEFAULT_BLUE },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
   },
   {
     id: 'proibido-nadar',
@@ -57,7 +57,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'PISCINA EM MANUTENÇÃO',
     icon: 'mdi:pool',
-    defaults: { frameColor: DEFAULT_BLUE },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
   },
   {
     id: 'velocidade-20',
@@ -66,7 +66,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'VELOCIDADE MÁXIMA PERMITIDA\n20 km/h',
     icon: 'mdi:speedometer',
-    defaults: { frameColor: DEFAULT_BLUE },
+    defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'left' },
   },
   {
     id: 'reciclagem',
