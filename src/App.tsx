@@ -91,6 +91,8 @@ export default function App() {
   const [customH, setCustomH] = useState(300);
   const placaRef = useRef<HTMLDivElement | null>(null);
   const sizeOptions = useMemo(() => makeShapeSizes(frameType), [frameType]);
+  const hasBodyText = message.trim().length > 0;
+  const hasSymbol = circle || prohibition;
 
   useEffect(() => {
     let active = true;
@@ -225,9 +227,9 @@ export default function App() {
           <h2>3. Cores CMYK</h2>
           <ColorFields label="Moldura / Cabeçalho" color={frameColor} setColor={setFrameColor} />
           <ColorFields label="Fundo" color={backgroundColor} setColor={setBackgroundColor} />
-          <ColorFields label="Texto" color={textColor} setColor={setTextColor} />
+          {hasBodyText && <ColorFields label="Texto" color={textColor} setColor={setTextColor} />}
           <ColorFields label="Pictograma" color={iconColor} setColor={setIconColor} />
-          <ColorFields label="Círculo / Proibição" color={symbolColor} setColor={setSymbolColor} />
+          {hasSymbol && <ColorFields label="Círculo / Proibição" color={symbolColor} setColor={setSymbolColor} />}
         </section>
         <section className="config-section">
           <h2>4. Tamanho</h2>

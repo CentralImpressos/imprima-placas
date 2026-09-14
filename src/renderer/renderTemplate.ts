@@ -164,8 +164,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (hasOptionalFrame) elements.push({ type: 'polygon', points: pointsString(insetPolygon(outerPoints, margin)), fill: 'none', stroke: frame, strokeWidth: stroke, strokeLinejoin: 'round' });
   }
 
-  // Cabeçalho: respiro inferior moderado (~7.5%) para o texto não colar na moldura.
-  const headerBottomPad = Math.max(pad * 2.8, h * 0.075);
+  // Cabeçalho: respiro inferior ~9% para o texto não colar na moldura.
+  const headerBottomPad = Math.max(pad * 3.2, h * 0.09);
   const contentTop = frameType === 'header' ? margin + 30 * s : margin + pad;
   const contentBottom = frameType === 'header' ? h - margin - headerBottomPad : h - margin - pad;
   const contentLeft = margin + stroke + pad;
@@ -196,8 +196,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
 
-  const layoutSafeGapTop = frameType === 'header' ? 4 * s : 3 * s;
-  const layoutSafeGapBottom = frameType === 'header' ? 5.5 * s : 3 * s;
+  const layoutSafeGapTop = frameType === 'header' ? 5 * s : 3 * s;
+  const layoutSafeGapBottom = frameType === 'header' ? 7 * s : 3 * s;
   const layoutTop = contentTop + layoutSafeGapTop;
   const layoutBottom = contentBottom - layoutSafeGapBottom;
   const layoutHeight = Math.max(1, layoutBottom - layoutTop);
@@ -234,7 +234,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     pictExtent = pictSize + ringOut(pictSize) * 2;
     blockH = pictExtent + gap * groupScale + textH;
     const free = Math.max(0, layoutHeight - blockH);
-    const topShare = (frameType === 'header' && needsRing) ? 0.58 : 0.5;
+    // Cabeçalho: com anel, desce o bloco (mais ar sob a faixa); sem anel, sobe levemente para respiro inferior.
+    const topShare = frameType === 'header' ? (needsRing ? 0.66 : 0.42) : 0.5;
     const blockTop = layoutTop + free * topShare;
     const iconY = blockTop + ringOut(pictSize) + pictSize / 2;
     textY = blockTop + pictExtent + gap * groupScale + textH / 2;
