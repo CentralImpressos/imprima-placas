@@ -55,10 +55,15 @@ function computeIconScale(blockWidth: number, needsRing: boolean, letterBoost: n
   if (needsRing) return (((blockWidth / 2) * 2 * 0.84 * 0.78) / 24) * letterBoost;
   return ((blockWidth * 0.92) / 24) * letterBoost;
 }
-const CHAR_WIDTH_FACTOR = 0.48;
+// Barlow Semi Condensed Bold — fator um pouco conservador para não estourar a moldura.
+const CHAR_WIDTH_FACTOR = 0.56;
 
 function longestWordLen(message: string): number {
   return message.toUpperCase().split(/[\s\r\n]+/).filter(Boolean).reduce((max, word) => Math.max(max, word.length), 1);
+}
+function measureTextWidth(lines: string[], fontSize: number): number {
+  const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
+  return longest * fontSize * CHAR_WIDTH_FACTOR;
 }
 function fitText(message: string, preferredFontSize: number, maxWidthMm: number, maxHeightMm: number, minFontSize = 9) {
   const maxWord = longestWordLen(message);
@@ -67,8 +72,7 @@ function fitText(message: string, preferredFontSize: number, maxWidthMm: number,
     const maxChars = Math.max(maxWord, Math.floor(maxWidthMm / Math.max(1, fontSize * CHAR_WIDTH_FACTOR)));
     const lines = wrap(message, maxChars);
     const lineHeight = fontSize * 1.1;
-    const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
-    const width = longest * fontSize * CHAR_WIDTH_FACTOR;
+    const width = measureTextWidth(lines, fontSize);
     const height = Math.max(lineHeight, lines.length * lineHeight);
     if ((width <= maxWidthMm + 0.01 && height <= maxHeightMm + 0.01) || fontSize <= minFontSize) return { lines, fontSize, lineHeight };
     const widthFactor = width <= maxWidthMm ? 1 : maxWidthMm / Math.max(1, width);
@@ -83,8 +87,7 @@ function fitTextToTargetWidth(message: string, targetWidthMm: number, maxWidthMm
   const seedFont = widthCap / (12 * CHAR_WIDTH_FACTOR);
   let fitted = fitText(message, seedFont, widthCap, maxHeightMm, minFontSize);
   for (let i = 0; i < 8; i += 1) {
-    const longest = fitted.lines.reduce((max, line) => Math.max(max, line.length), 1);
-    const currentW = longest * fitted.fontSize * CHAR_WIDTH_FACTOR;
+    const currentW = measureTextWidth(fitted.lines, fitted.fontSize);
     const currentH = fitted.lines.length * fitted.lineHeight;
     if (currentW >= widthCap * 0.96 || currentH >= maxHeightMm * 0.98) break;
     const grow = Math.min(widthCap / Math.max(1, currentW), maxHeightMm / Math.max(1, currentH));
@@ -164,22 +167,21 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (hasOptionalFrame) elements.push({ type: 'polygon', points: pointsString(insetPolygon(outerPoints, margin)), fill: 'none', stroke: frame, strokeWidth: stroke, strokeLinejoin: 'round' });
   }
 
-  // Margem inferior do corpo: mínima estável (~6.5%), sem exagerar a área negativa.
-  const headerBottomPad = Math.max(pad * 2.6, h * 0.065);
-  const contentTop = frameType === 'header' ? margin + 30 * s : margin + pad;
-  const contentBottom = frameType === 'header' ? h - margin - headerBottomPad : h - margin - pad;
+  // Área de conteúdo com margens simétricas (centro visual correto no cabeçalho).
+  const bodyPad = Math.max(pad * 1.6, Math.min(w, h) * 0.04);
+  const contentTop = frameType === 'header' ? margin + 30 * s + bodyPad : margin + pad;
+  const contentBottom = h - margin - bodyPad;
   const contentLeft = margin + stroke + pad;
   const contentRight = w - margin - stroke - pad;
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
   const isNonRectangular = frameType === 'circular' || frameType === 'diamond' || frameType === 'triangle';
-  const usableWidth = isNonRectangular ? Math.min(w, h) - 2 * (margin + pad) : contentRight - contentLeft;
+  const usableWidth = Math.max(1, isNonRectangular ? Math.min(w, h) - 2 * (margin + pad) : contentRight - contentLeft);
   const contentCenterX = (contentLeft + contentRight) / 2;
   const needsRing = appearance.circle || appearance.prohibition;
   const position = appearance.pictogramPosition;
   const letterBoost = isLetterSlug(config.iconSlug) ? 1.92 : 1;
   const message = config.message.trim();
 
-  // Sem texto: centro absoluto da forma (triângulo: centro óptico nas 3 arestas).
   if (!message && hasIcon) {
     const centerY = frameType === 'triangle' ? h * (2 / 3) : cy;
     const maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
@@ -197,10 +199,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
 
-  const layoutSafeGapTop = frameType === 'header' ? 3.5 * s : 3 * s;
-  const layoutSafeGapBottom = frameType === 'header' ? 4.5 * s : 3 * s;
-  const layoutTop = contentTop + layoutSafeGapTop;
-  const layoutBottom = contentBottom - layoutSafeGapBottom;
+  const layoutTop = contentTop;
+  const layoutBottom = contentBottom;
   const layoutHeight = Math.max(1, layoutBottom - layoutTop);
   let finalLines: string[] = [];
   let finalFontSize = 12;
@@ -210,13 +210,12 @@ export function renderTemplate(config: SignRenderConfig): string {
   const wordCount = message.split(/\s+/).filter(Boolean).length;
 
   if (hasIcon && position === 'top') {
-    // Conteúdo maior: preenche a área útil e deixa só a margem mínima.
-    const preferredPict = Math.min(usableWidth * 0.8, layoutHeight * 0.58);
-    const minPict = Math.min(usableWidth * 0.38, layoutHeight * 0.26);
+    const preferredPict = Math.min(usableWidth * 0.8, layoutHeight * 0.56);
+    const minPict = Math.min(usableWidth * 0.36, layoutHeight * 0.24);
     const gap = 6 * s;
     let pictSize = preferredPict;
     const ringOut = (size: number) => (needsRing ? Math.max(1.8, (size / 2) * 0.16) * 0.5 : 0);
-    let textMaxH = Math.max(20, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
+    let textMaxH = Math.max(18, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
     let fitted = fitTextToTargetWidth(
       message,
       wordCount <= 2 ? Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.88)) : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.94)),
@@ -228,7 +227,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     let blockH = pictExtent + gap + textH;
     if (blockH > layoutHeight && pictSize > minPict) {
       pictSize = clamp(layoutHeight - textH - gap - ringOut(preferredPict) * 2, minPict, preferredPict);
-      textMaxH = Math.max(18, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
+      textMaxH = Math.max(16, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
       fitted = fitTextToTargetWidth(message, Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.94)), usableWidth, textMaxH);
       textH = fitted.lines.length * fitted.lineHeight;
       pictExtent = pictSize + ringOut(pictSize) * 2;
@@ -240,7 +239,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     textH = fitted.lines.length * fitted.lineHeight;
     pictExtent = pictSize + ringOut(pictSize) * 2;
     blockH = pictExtent + gap * groupScale + textH;
-    // Centro vertical verdadeiro (50/50) dentro da área útil já com margem inferior garantida.
     const free = Math.max(0, layoutHeight - blockH);
     const blockTop = layoutTop + free * 0.5;
     const iconY = blockTop + ringOut(pictSize) + pictSize / 2;
@@ -249,47 +247,62 @@ export function renderTemplate(config: SignRenderConfig): string {
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
     elements.push(...iconElements(config.iconSvg, contentCenterX, iconY, computeIconScale(pictSize, needsRing, letterBoost), needsRing ? pictSize / 2 : 0, appearance.circle, appearance.prohibition, iconRgb));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    const preferredPict = Math.min(layoutHeight * 0.64, usableWidth * 0.36);
-    const minPict = Math.min(layoutHeight * 0.28, usableWidth * 0.18);
-    const gap = 6 * s;
+    // Paisagem e retrato: bloco [pictograma + texto] cabe inteiro na área útil e fica centralizado.
+    const preferredPict = Math.min(layoutHeight * 0.72, usableWidth * 0.3);
+    const minPict = Math.min(layoutHeight * 0.32, usableWidth * 0.14);
+    const gap = 5 * s;
     let pictSize = preferredPict;
-    let textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
-    let fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, layoutHeight);
+    let textAreaW = Math.max(24 * s, usableWidth - pictSize - gap);
+    let fitted = fitTextToTargetWidth(message, textAreaW * 0.95, textAreaW, layoutHeight);
     let textH = fitted.lines.length * fitted.lineHeight;
-    let textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
+    let textW = measureTextWidth(fitted.lines, fitted.fontSize);
     let blockW = pictSize + gap + textW;
     let blockH = Math.max(pictSize, textH);
+
+    // Se estoura a largura, reduz pictograma e refaz o texto.
     if (blockW > usableWidth && pictSize > minPict) {
-      pictSize = clamp(usableWidth - gap - textW, minPict, preferredPict);
-      textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
-      fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, layoutHeight);
+      const maxTextForMinPict = Math.max(24 * s, usableWidth - minPict - gap);
+      fitted = fitTextToTargetWidth(message, maxTextForMinPict * 0.95, maxTextForMinPict, layoutHeight);
+      textW = measureTextWidth(fitted.lines, fitted.fontSize);
       textH = fitted.lines.length * fitted.lineHeight;
-      textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
+      pictSize = clamp(usableWidth - gap - textW, minPict, preferredPict);
+      textAreaW = Math.max(24 * s, usableWidth - pictSize - gap);
+      fitted = fitTextToTargetWidth(message, textAreaW * 0.95, textAreaW, layoutHeight);
+      textW = measureTextWidth(fitted.lines, fitted.fontSize);
+      textH = fitted.lines.length * fitted.lineHeight;
       blockW = pictSize + gap + textW;
       blockH = Math.max(pictSize, textH);
     }
-    const groupScale = blockW > usableWidth || blockH > layoutHeight ? Math.min(usableWidth / Math.max(1, blockW), layoutHeight / Math.max(1, blockH)) : 1;
+
+    // Escala final se ainda passar (altura ou largura).
+    let groupScale = 1;
+    if (blockW > usableWidth || blockH > layoutHeight) {
+      groupScale = Math.min(usableWidth / Math.max(1, blockW), layoutHeight / Math.max(1, blockH));
+    }
     pictSize *= groupScale;
     fitted = { lines: fitted.lines, fontSize: Math.max(8, fitted.fontSize * groupScale), lineHeight: Math.max(9, fitted.lineHeight * groupScale) };
+    textW = measureTextWidth(fitted.lines, fitted.fontSize);
     textH = fitted.lines.length * fitted.lineHeight;
-    textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
-    blockW = pictSize + gap * groupScale + textW;
+    const effectiveGap = gap * groupScale;
+    blockW = pictSize + effectiveGap + textW;
     blockH = Math.max(pictSize, textH);
-    const blockLeft = contentLeft + (usableWidth - blockW) / 2;
-    const blockTop = layoutTop + (layoutHeight - blockH) / 2;
+
+    // Centraliza o bloco horizontal e verticalmente na área útil.
+    const blockLeft = contentLeft + Math.max(0, (usableWidth - blockW) / 2);
+    const blockTop = layoutTop + Math.max(0, (layoutHeight - blockH) / 2);
     const iconY = blockTop + blockH / 2;
     textY = iconY;
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
     const ringRadius = pictSize / 2;
     const iconScale = computeIconScale(pictSize, needsRing, letterBoost);
-    const effectiveGap = gap * groupScale;
+
     if (position === 'left') {
       const iconX = blockLeft + ringRadius;
-      textX = iconX + ringRadius + effectiveGap;
+      textX = iconX + ringRadius + effectiveGap; // anchor start
       elements.push(...iconElements(config.iconSvg, iconX, iconY, iconScale, needsRing ? ringRadius : 0, appearance.circle, appearance.prohibition, iconRgb));
     } else {
       const iconX = blockLeft + blockW - ringRadius;
-      textX = iconX - ringRadius - effectiveGap;
+      textX = iconX - ringRadius - effectiveGap; // anchor end
       elements.push(...iconElements(config.iconSvg, iconX, iconY, iconScale, needsRing ? ringRadius : 0, appearance.circle, appearance.prohibition, iconRgb));
     }
   } else {
@@ -301,7 +314,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   }
 
   if (message && frameType === 'simple') {
-    textY += 3 * s;
+    textY += 2 * s;
   }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
   finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight, text: line, fontSize: finalFontSize, fontWeight: 800, fill: textRgb, fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
