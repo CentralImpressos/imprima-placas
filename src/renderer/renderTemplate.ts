@@ -5,11 +5,38 @@ import { getFrameGeometry, insetPolygon } from './geometry';
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 const cmykToRgb = ({ c, m, y, k }: { c: number; m: number; y: number; k: number }) => {
-  const C = clamp(c, 0, 100) / 100;
-  const M = clamp(m, 0, 100) / 100;
-  const Y = clamp(y, 0, 100) / 100;
-  const K = clamp(k, 0, 100) / 100;
-  return `rgb(${Math.round(255 * (1 - C) * (1 - K))},${Math.round(255 * (1 - M) * (1 - K))},${Math.round(255 * (1 - Y) * (1 - K))})`;
+  const C = clamp(c, 0, 100);
+  const M = clamp(m, 0, 100);
+  const Y = clamp(y, 0, 100);
+  const K = clamp(k, 0, 100);
+
+  const presets: Array<{ c: number; m: number; y: number; k: number; rgb: string }> = [
+    { c: 0, m: 0, y: 0, k: 100, rgb: 'rgb(0,0,0)' },
+    { c: 0, m: 0, y: 0, k: 0, rgb: 'rgb(255,255,255)' },
+    { c: 100, m: 100, y: 0, k: 0, rgb: 'rgb(46,48,146)' },
+    { c: 100, m: 0, y: 0, k: 0, rgb: 'rgb(0,174,239)' },
+    { c: 100, m: 0, y: 100, k: 0, rgb: 'rgb(0,166,81)' },
+    { c: 0, m: 0, y: 100, k: 0, rgb: 'rgb(255,242,0)' },
+    { c: 0, m: 100, y: 100, k: 0, rgb: 'rgb(237,28,36)' },
+    { c: 0, m: 100, y: 0, k: 0, rgb: 'rgb(236,0,140)' },
+  ];
+
+  const preset = presets.find(
+    (item) =>
+      item.c === C &&
+      item.m === M &&
+      item.y === Y &&
+      item.k === K,
+  );
+
+  if (preset) return preset.rgb;
+
+  const cmykC = C / 100;
+  const cmykM = M / 100;
+  const cmykY = Y / 100;
+  const cmykK = K / 100;
+
+  return `rgb(${Math.round(255 * (1 - cmykC) * (1 - cmykK))},${Math.round(255 * (1 - cmykM) * (1 - cmykK))},${Math.round(255 * (1 - cmykY) * (1 - cmykK))})`;
 };
 const scaleFor = (w: number, h: number) => Math.min(w, h) / 100;
 
