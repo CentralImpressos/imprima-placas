@@ -164,8 +164,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (hasOptionalFrame) elements.push({ type: 'polygon', points: pointsString(insetPolygon(outerPoints, margin)), fill: 'none', stroke: frame, strokeWidth: stroke, strokeLinejoin: 'round' });
   }
 
-  // Cabeçalho: respiro inferior ~9% para o texto não colar na moldura.
-  const headerBottomPad = Math.max(pad * 3.2, h * 0.09);
+  // Margem inferior do corpo: mínima estável (~6.5%), sem exagerar a área negativa.
+  const headerBottomPad = Math.max(pad * 2.6, h * 0.065);
   const contentTop = frameType === 'header' ? margin + 30 * s : margin + pad;
   const contentBottom = frameType === 'header' ? h - margin - headerBottomPad : h - margin - pad;
   const contentLeft = margin + stroke + pad;
@@ -179,10 +179,11 @@ export function renderTemplate(config: SignRenderConfig): string {
   const letterBoost = isLetterSlug(config.iconSlug) ? 1.92 : 1;
   const message = config.message.trim();
 
+  // Sem texto: centro absoluto da forma (triângulo: centro óptico nas 3 arestas).
   if (!message && hasIcon) {
-    const centerY = frameType === 'triangle' ? h * (2 / 3) : (frameType === 'header' ? (contentTop + contentBottom) / 2 : cy);
+    const centerY = frameType === 'triangle' ? h * (2 / 3) : cy;
     const maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
-    const pictSize = needsRing ? maxR * 2 : maxR * 2 * 0.88;
+    const pictSize = needsRing ? maxR * 2 : maxR * 2 * 0.9;
     elements.push(...iconElements(
       config.iconSvg,
       isNonRectangular ? cx : contentCenterX,
@@ -196,8 +197,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
 
-  const layoutSafeGapTop = frameType === 'header' ? 5 * s : 3 * s;
-  const layoutSafeGapBottom = frameType === 'header' ? 7 * s : 3 * s;
+  const layoutSafeGapTop = frameType === 'header' ? 3.5 * s : 3 * s;
+  const layoutSafeGapBottom = frameType === 'header' ? 4.5 * s : 3 * s;
   const layoutTop = contentTop + layoutSafeGapTop;
   const layoutBottom = contentBottom - layoutSafeGapBottom;
   const layoutHeight = Math.max(1, layoutBottom - layoutTop);
@@ -209,20 +210,26 @@ export function renderTemplate(config: SignRenderConfig): string {
   const wordCount = message.split(/\s+/).filter(Boolean).length;
 
   if (hasIcon && position === 'top') {
-    const preferredPict = Math.min(usableWidth * 0.7, layoutHeight * 0.48);
-    const minPict = Math.min(usableWidth * 0.35, layoutHeight * 0.22);
-    const gap = 7 * s;
+    // Conteúdo maior: preenche a área útil e deixa só a margem mínima.
+    const preferredPict = Math.min(usableWidth * 0.8, layoutHeight * 0.58);
+    const minPict = Math.min(usableWidth * 0.38, layoutHeight * 0.26);
+    const gap = 6 * s;
     let pictSize = preferredPict;
     const ringOut = (size: number) => (needsRing ? Math.max(1.8, (size / 2) * 0.16) * 0.5 : 0);
     let textMaxH = Math.max(20, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
-    let fitted = fitTextToTargetWidth(message, wordCount <= 2 ? Math.min(usableWidth, pictSize) : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
+    let fitted = fitTextToTargetWidth(
+      message,
+      wordCount <= 2 ? Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.88)) : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.94)),
+      usableWidth,
+      textMaxH,
+    );
     let textH = fitted.lines.length * fitted.lineHeight;
     let pictExtent = pictSize + ringOut(pictSize) * 2;
     let blockH = pictExtent + gap + textH;
     if (blockH > layoutHeight && pictSize > minPict) {
       pictSize = clamp(layoutHeight - textH - gap - ringOut(preferredPict) * 2, minPict, preferredPict);
       textMaxH = Math.max(18, layoutHeight - pictSize - ringOut(pictSize) * 2 - gap);
-      fitted = fitTextToTargetWidth(message, Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92)), usableWidth, textMaxH);
+      fitted = fitTextToTargetWidth(message, Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.94)), usableWidth, textMaxH);
       textH = fitted.lines.length * fitted.lineHeight;
       pictExtent = pictSize + ringOut(pictSize) * 2;
       blockH = pictExtent + gap + textH;
@@ -233,10 +240,9 @@ export function renderTemplate(config: SignRenderConfig): string {
     textH = fitted.lines.length * fitted.lineHeight;
     pictExtent = pictSize + ringOut(pictSize) * 2;
     blockH = pictExtent + gap * groupScale + textH;
+    // Centro vertical verdadeiro (50/50) dentro da área útil já com margem inferior garantida.
     const free = Math.max(0, layoutHeight - blockH);
-    // Cabeçalho: com anel, desce o bloco (mais ar sob a faixa); sem anel, sobe levemente para respiro inferior.
-    const topShare = frameType === 'header' ? (needsRing ? 0.66 : 0.42) : 0.5;
-    const blockTop = layoutTop + free * topShare;
+    const blockTop = layoutTop + free * 0.5;
     const iconY = blockTop + ringOut(pictSize) + pictSize / 2;
     textY = blockTop + pictExtent + gap * groupScale + textH / 2;
     textX = contentCenterX;

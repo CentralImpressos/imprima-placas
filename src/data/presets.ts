@@ -90,7 +90,12 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'ATENÇÃO',
     message: 'CUIDADO',
     icon: 'mdi:alert',
-    defaults: { frameColor: DEFAULT_YELLOW, backgroundColor: DEFAULT_YELLOW },
+    defaults: {
+      frameEnabled: true,
+      frameColor: DEFAULT_BLACK,
+      backgroundColor: DEFAULT_YELLOW,
+      iconColor: DEFAULT_BLACK,
+    },
   },
   {
     id: 'risco-eletrico',
