@@ -1,26 +1,64 @@
 export const PICTOGRAMAS_DISPONIVEIS = {
   'Trânsito / Proibição': [
+    { nome: 'Proibido fumar', slug: 'mdi:smoking' },
     { nome: 'Proibido estacionar', slug: 'mdi:car-off' },
     { nome: 'Sem entrada', slug: 'mdi:road-variant-off' },
-    { nome: 'Proibido fumar', slug: 'mdi:smoking' },
-    { nome: 'Acesso restrito', slug: 'mdi:shield-off-outline' }
+    { nome: 'Proibido celular', slug: 'mdi:cellphone-off' },
+    { nome: 'Proibido comida', slug: 'mdi:food-off' },
+    { nome: 'Proibido bebidas', slug: 'mdi:glass-cocktail-off' },
+    { nome: 'Proibido animais', slug: 'mdi:dog-side-off' },
+    { nome: 'Proibido nadar', slug: 'mdi:swim' },
+    { nome: 'Proibido fotografar', slug: 'mdi:camera-off' },
+    { nome: 'Acesso restrito', slug: 'mdi:shield-off-outline' },
   ],
   'Emergência / Rotas': [
     { nome: 'Extintor', slug: 'mdi:fire-extinguisher' },
     { nome: 'Saída de emergência', slug: 'mdi:exit-run' },
     { nome: 'Primeiros socorros', slug: 'mdi:medical-bag' },
-    { nome: 'Rota de evacuação', slug: 'mdi:directions-fork' }
+    { nome: 'Rota de evacuação', slug: 'mdi:directions-fork' },
+    { nome: 'Ponto de encontro', slug: 'mdi:map-marker-radius' },
+    { nome: 'Alarme de incêndio', slug: 'mdi:fire-alert' },
+    { nome: 'Hidrante', slug: 'mdi:fire-hydrant' },
   ],
   'Advertência': [
     { nome: 'Atenção', slug: 'mdi:alert' },
     { nome: 'Piso escorregadio', slug: 'mdi:slippery' },
     { nome: 'Risco elétrico', slug: 'mdi:flash-alert' },
-    { nome: 'Cuidado com máquinas', slug: 'mdi:industrial' }
+    { nome: 'Cuidado com máquinas', slug: 'mdi:industrial' },
+    { nome: 'Queda', slug: 'mdi:human-handsup' },
+    { nome: 'Substâncias tóxicas', slug: 'mdi:biohazard' },
+    { nome: 'Alta temperatura', slug: 'mdi:thermometer-alert' },
+    { nome: 'Cuidado degrau', slug: 'mdi:stairs' },
+  ],
+  'Obrigações / Informações': [
+    { nome: 'Use máscara', slug: 'mdi:face-mask' },
+    { nome: 'Use capacete', slug: 'mdi:hard-hat' },
+    { nome: 'Use luvas', slug: 'mdi:gloves' },
+    { nome: 'Use óculos', slug: 'mdi:glasses' },
+    { nome: 'Use cinto', slug: 'mdi:seatbelt' },
+    { nome: 'Lave as mãos', slug: 'mdi:hand-wash' },
+    { nome: 'Distância social', slug: 'mdi:account-multiple' },
   ],
   'Utilidades / Serviços': [
     { nome: 'Câmera', slug: 'mdi:cctv' },
-    { nome: 'Acesso para cadeirantes', slug: 'mdi:wheelchair-accessibility' },
+    { nome: 'Acesso cadeirantes', slug: 'mdi:wheelchair-accessibility' },
     { nome: 'Banheiro', slug: 'mdi:toilet' },
-    { nome: 'Lixeira', slug: 'mdi:trash-can-outline' }
-  ]
+    { nome: 'Banheiro masculino', slug: 'mdi:human-male' },
+    { nome: 'Banheiro feminino', slug: 'mdi:human-female' },
+    { nome: 'Lixeira', slug: 'mdi:trash-can-outline' },
+    { nome: 'Reciclagem', slug: 'mdi:recycle' },
+    { nome: 'Elevador', slug: 'mdi:elevator' },
+    { nome: 'Escada', slug: 'mdi:stairs' },
+    { nome: 'Wi-Fi', slug: 'mdi:wifi' },
+    { nome: 'Estacionamento', slug: 'mdi:parking' },
+    { nome: 'Bebedouro', slug: 'mdi:water' },
+  ],
+  'Ambiente / Saúde': [
+    { nome: 'Não pise na grama', slug: 'mdi:grass' },
+    { nome: 'Área de lazer', slug: 'mdi:playground' },
+    { nome: 'Piscina', slug: 'mdi:pool' },
+    { nome: 'Ducha', slug: 'mdi:shower' },
+    { nome: 'Animais permitidos', slug: 'mdi:dog' },
+    { nome: 'Crianças', slug: 'mdi:account-child' },
+  ],
 } as const;

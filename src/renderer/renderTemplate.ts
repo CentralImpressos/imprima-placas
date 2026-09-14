@@ -58,9 +58,9 @@ export function renderTemplate(config: SignRenderConfig): string {
   const frame = cmykToRgb(appearance.frameColor);
   const bg = cmykToRgb(appearance.backgroundColor);
   const s = scaleFor(w, h);
-  const margin = 5 * s;
+  const margin = 3.5 * s;
   const stroke = 2 * s;
-  const pad = 7 * s;
+  const pad = 4 * s;
   const elements: GraphicElement[] = [];
 
   if (frameType === 'simple' || frameType === 'header') {
@@ -99,7 +99,7 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   const contentTop = frameType === 'header' ? margin + 32 * s : margin + pad;
   const contentBottom = h - margin - pad;
-  const baseTextSize = clamp(10 * s, 8, 42);
+  const baseTextSize = clamp(11.5 * s, 9, 48);
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
   const isNonRectangular = frameType === 'circular' || frameType === 'diamond' || frameType === 'triangle';
   const usableWidth = isNonRectangular ? Math.min(w, h) - 2 * (margin + pad) : w - 2 * (margin + stroke + pad);
@@ -108,7 +108,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   const preliminaryMaxChars = Math.max(4, Math.floor(usableWidth / Math.max(1, 5.5 * s)));
   const preliminaryLines = wrap(config.message || '', preliminaryMaxChars);
   const textLineHeight = baseTextSize * 1.12;
-  const textGap = 10 * s;
+  const textGap = 6 * s;
 
   let textX = cx;
   let textY = (contentTop + contentBottom) / 2;
@@ -118,26 +118,23 @@ export function renderTemplate(config: SignRenderConfig): string {
   let finalIconScale = 3.8 * s;
 
   if (hasIcon && appearance.pictogramPosition === 'top') {
-    // The ring is intentionally smaller than the available width. This leaves
-    // a visual breathing room between the prohibition symbol and the frame.
-    const desiredRingScale = 2.2 * s;
+    // Anel maior e mais próximo da moldura, com menos respiro vertical.
+    const desiredRingScale = 3.1 * s;
     const ringScaleByWidth = usableWidth / (2 * 11.5 + 2.2);
     const ringScale = Math.min(desiredRingScale, ringScaleByWidth);
     const ringDiameter = (2 * 11.5 + 2.2) * ringScale;
 
-    // The pictogram itself must sit comfortably inside the ring. Its 24x24
-    // viewBox is deliberately smaller than the ring's inner diameter.
+    // O pictograma fica confortável dentro do anel.
     const iconMarginRatio = appearance.prohibition ? 0.68 : 1;
     const desiredIconScale = ringScale * iconMarginRatio;
 
-    // Wrap first, then fit the complete symbol + gap + text block to the
-    // available area. The text is allowed to use the full safe width.
+    // Encaixa o bloco (anel + gap + texto) na área útil disponível.
     finalLines = wrap(config.message || '', preliminaryMaxChars);
     let blockScale = 1;
 
     for (let iteration = 0; iteration < 3; iteration += 1) {
       const scaledRingDiameter = ringDiameter * blockScale;
-      const scaledFontSize = Math.max(8, baseTextSize * blockScale);
+      const scaledFontSize = Math.max(9, baseTextSize * blockScale);
       const scaledLineHeight = Math.max(scaledFontSize * 1.06, textLineHeight * blockScale);
       const estimatedTextWidth = Math.max(1, ...finalLines.map((line) => line.length * scaledFontSize * 0.52));
       const blockWidth = Math.max(scaledRingDiameter, estimatedTextWidth);
@@ -151,7 +148,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     }
 
     finalIconScale = Math.max(0.25, desiredIconScale * blockScale);
-    finalFontSize = Math.max(8, baseTextSize * blockScale);
+    finalFontSize = Math.max(9, baseTextSize * blockScale);
     finalLineHeight = Math.max(finalFontSize * 1.06, textLineHeight * blockScale);
 
     const finalRingDiameter = ringDiameter * blockScale;
