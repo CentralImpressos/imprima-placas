@@ -78,9 +78,10 @@ export default function App() {
     heading,
     message,
     iconSvg,
+    iconSlug: icon,
     showIcon,
     appearance: { frameColor, backgroundColor, circle, prohibition, pictogramPosition: position },
-  }), [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, showIcon, frameColor, backgroundColor, circle, prohibition, position]);
+  }), [frameType, size.widthMm, size.heightMm, heading, message, iconSvg, icon, showIcon, frameColor, backgroundColor, circle, prohibition, position]);
 
   const filteredPresets = SIGN_PRESETS.filter((item) => item.frameType === frameType);
   const exportPdf = async () => {

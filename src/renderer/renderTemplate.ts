@@ -36,7 +36,7 @@ function pointsString(points: Array<{ x: number; y: number }>) {
 }
 
 /**
- * Desenha o pictograma e, opcionalmente, o anel e a barra de proibição.
+ * Pictograma + anel/barra opcionais.
  * ringRadiusMm e iconScale são independentes: o ícone deve caber dentro do anel.
  */
 function iconElements(
@@ -85,6 +85,11 @@ function iconElements(
   return elements;
 }
 
+function isLetterSlug(slug?: string): boolean {
+  if (!slug) return false;
+  return /mdi:alpha-[a-z](?:-|$)/i.test(slug) || /letter-/i.test(slug);
+}
+
 export function renderTemplate(config: SignRenderConfig): string {
   const geometry = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
   const { width: w, height: h, centerX: cx } = geometry;
@@ -93,7 +98,7 @@ export function renderTemplate(config: SignRenderConfig): string {
   const bg = cmykToRgb(appearance.backgroundColor);
   const s = scaleFor(w, h);
 
-  // Margem externa (borda da placa → moldura) um pouco maior;
+  // Margem externa (borda → moldura) um pouco maior;
   // respiro interno (moldura → conteúdo) menor.
   const margin = 4 * s;
   const stroke = 2 * s;
@@ -157,29 +162,16 @@ export function renderTemplate(config: SignRenderConfig): string {
   const needsRing = appearance.circle || appearance.prohibition;
   const textGap = 6 * s;
 
-  // Tamanho-alvo do bloco do pictograma (com ou sem anel).
-  // Sem anel, mantém a mesma largura visual que o anel teria — texto fica alinhado.
+  // Largura-alvo do bloco do pictograma (com ou sem anel).
+  // Sem anel, mantém a mesma largura visual — texto fica com a mesma margem lateral.
   const targetBlockWidth = Math.min(usableWidth * 0.72, usableHeight * 0.55);
   const ringRadius = targetBlockWidth / 2;
-  // Ícone ~58% do diâmetro interno do anel (cabe com folga).
-  // Letras (alpha-*) têm mais padding no glyph → boost leve.
-  const isLetterIcon = /mdi:alpha-/i.test(config.iconSvg) === false
-    && /alpha-|letter-/i.test(String((config as { icon?: string }).icon ?? '')) === false;
-  // Heurística simples: se o SVG do ícone for muito “vazio”, o usuário reportou o E.
-  // Aplicamos boost fixo quando o scale base for usado com alpha.
-  void isLetterIcon;
 
-  const iconToRingRatio = 0.58;
-  // scale do Iconify: viewBox 24x24 → tamanho visual ≈ 24 * scale
-  // queremos 24 * iconScale ≈ diâmetro_interno * ratio
-  const innerDiameter = ringRadius * 2 * 0.88; // desconta a espessura do traço
-  let iconScale = (innerDiameter * iconToRingRatio) / 24;
-
-  // Boost para letras (alpha-e etc.), que visualmente ficam menores no viewBox.
-  // Detectamos pelo conteúdo do SVG quando possível; fallback por tamanho baixo.
-  if (config.iconSvg.includes('M10') === false) {
-    // sem heurística confiável no path; aplicamos boost se o usuário escolheu alpha
-  }
+  // Ícone ~58% do diâmetro interno do anel.
+  // Letras (alpha-*) têm mais padding no glyph → boost ~35%.
+  const innerDiameter = ringRadius * 2 * 0.88;
+  const letterBoost = isLetterSlug(config.iconSlug) ? 1.35 : 1;
+  const iconScale = ((innerDiameter * 0.58) / 24) * letterBoost;
 
   let finalLines = wrap(config.message || '', Math.max(4, Math.floor(targetBlockWidth / Math.max(1, 5.2 * s))));
   let finalFontSize = clamp(targetBlockWidth * 0.18, 10, 48);
@@ -190,7 +182,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   let finalIconScale = iconScale;
 
   if (hasIcon && appearance.pictogramPosition === 'top') {
-    // Encaixa o bloco (anel/ícone + gap + texto) na área útil.
     let blockScale = 1;
     for (let iteration = 0; iteration < 3; iteration += 1) {
       const blockW = targetBlockWidth * blockScale;
@@ -211,7 +202,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     finalFontSize = Math.max(10, finalFontSize * blockScale);
     finalLineHeight = finalFontSize * 1.12;
 
-    // Re-wrap com a largura efetiva do bloco (texto ≈ largura do pictograma).
+    // Texto limitado à largura do bloco do pictograma.
     finalLines = wrap(
       config.message || '',
       Math.max(4, Math.floor((finalRingRadius * 2) / Math.max(1, finalFontSize * 0.55))),
@@ -226,18 +217,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY = finalBlockTop + finalBlockW + textGap * blockScale + finalTextH / 2;
     const iconY = finalBlockTop + finalBlockW / 2;
 
-    // Boost do E / letras: se o pictograma for alpha-*, aumenta ~35%.
-    // O App passa o slug no ícone; aqui só temos o SVG body.
-    // Heurística: viewBox de letras costuma deixar o glifo ~60% do box.
-    // Aplicamos um leve aumento fixo quando o anel está presente e o ícone
-    // parece “fino” — o usuário reportou especificamente o E.
-    // Melhor: o App poderia passar o slug; por enquanto boost conservador
-    // via ratio um pouco maior quando NÃO há muitos paths densos.
-    const pathCount = (config.iconSvg.match(/<path/gi) || []).length;
-    if (pathCount <= 1) {
-      finalIconScale *= 1.35;
-    }
-
     elements.push(...iconElements(
       config.iconSvg,
       cx,
@@ -248,10 +227,7 @@ export function renderTemplate(config: SignRenderConfig): string {
       appearance.prohibition,
     ));
   } else if (hasIcon) {
-    // left / right: tamanho unificado (mesmo target visual).
     finalIconScale = iconScale;
-    const pathCount = (config.iconSvg.match(/<path/gi) || []).length;
-    if (pathCount <= 1) finalIconScale *= 1.35;
 
     if (appearance.pictogramPosition === 'left') {
       const iconX = margin + pad + finalRingRadius;

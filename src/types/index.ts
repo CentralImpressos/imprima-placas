@@ -23,7 +23,17 @@ export type SignAppearance = {
   pictogramPosition: PictogramPosition;
 };
 export type SignPreset = { id: string; name: string; frameType: FrameType; heading?: string; message: string; icon?: string; defaults?: Partial<SignAppearance>; };
-export type SignRenderConfig = { frameType: FrameType; widthMm: number; heightMm: number; heading: string; message: string; iconSvg: string; showIcon: boolean; appearance: SignAppearance; };
+export type SignRenderConfig = {
+  frameType: FrameType;
+  widthMm: number;
+  heightMm: number;
+  heading: string;
+  message: string;
+  iconSvg: string;
+  iconSlug?: string;
+  showIcon: boolean;
+  appearance: SignAppearance;
+};
 export type SignDefinition = { id: string; name: string; categoryId: string; templateId: string; fields?: TemplateField[]; defaultValues?: SignValues; };
 export type SignInstance = { definitionId: string; sizeId: string; values: SignValues; };
 export type TemplateDefinition = { id: PlateTemplateId; name: string; category: string; description?: string; fields: TemplateField[]; render: (values: PlateFieldValues, size: PlateSize, geometry?: PlateGeometry) => import('../composition').Composition; };
