@@ -317,7 +317,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY += 2 * s;
   }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
-  const controlTextWidth = position === 'left' || position === 'right' ? measureTextWidth(finalLines, finalFontSize) : undefined;
   finalLines.forEach((line, index) => elements.push({
     type: 'text',
     x: textX,
