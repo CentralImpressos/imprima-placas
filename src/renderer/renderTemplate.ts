@@ -55,8 +55,8 @@ function computeIconScale(blockWidth: number, needsRing: boolean, letterBoost: n
   if (needsRing) return (((blockWidth / 2) * 2 * 0.84 * 0.78) / 24) * letterBoost;
   return ((blockWidth * 0.92) / 24) * letterBoost;
 }
-// Barlow Semi Condensed Bold — fator calibrado para aproximar melhor a largura visual real.
-const CHAR_WIDTH_FACTOR = 0.50;
+// Barlow Semi Condensed Bold — fator conservador para manter o dimensionamento natural.
+const CHAR_WIDTH_FACTOR = 0.56;
 
 function longestWordLen(message: string): number {
   return message.toUpperCase().split(/[\s\r\n]+/).filter(Boolean).reduce((max, word) => Math.max(max, word.length), 1);
@@ -317,6 +317,20 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY += 2 * s;
   }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
-  finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight, text: line, fontSize: finalFontSize, fontWeight: 800, fill: textRgb, fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
+  const controlTextWidth = position === 'left' || position === 'right' ? measureTextWidth(finalLines, finalFontSize) : undefined;
+  finalLines.forEach((line, index) => elements.push({
+    type: 'text',
+    x: textX,
+    y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight,
+    text: line,
+    fontSize: finalFontSize,
+    fontWeight: 800,
+    fill: textRgb,
+    fontFamily: 'Barlow Semi Condensed, sans-serif',
+    anchor: textAnchor,
+    dominantBaseline: 'middle',
+    textLength: textAnchor === 'middle' ? undefined : measureTextWidth([line], finalFontSize),
+    lengthAdjust: textAnchor === 'middle' ? undefined : 'spacingAndGlyphs',
+  }));
   return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
 }
