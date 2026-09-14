@@ -1,6 +1,7 @@
 import type { SignRenderConfig } from '../types';
 import type { Composition, GraphicElement } from '../composition';
 import { renderCompositionToSvg } from '../composition';
+import { getFrameGeometry, insetPolygon } from './geometry';
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 const cmykToRgb = ({ c, m, y, k }: { c: number; m: number; y: number; k: number }) => {
@@ -23,13 +24,15 @@ function wrap(text: string, maxChars: number) {
       if (next.length > maxChars && current) {
         output.push(current);
         current = word;
-      } else {
-        current = next;
-      }
+      } else current = next;
     });
     if (current) output.push(current);
     return output;
   });
+}
+
+function pointsString(points: Array<{ x: number; y: number }>) {
+  return points.map((point) => `${point.x},${point.y}`).join(' ');
 }
 
 function iconElements(svg: string, x: number, y: number, scale: number, prohibition: boolean): GraphicElement[] {
@@ -40,49 +43,47 @@ function iconElements(svg: string, x: number, y: number, scale: number, prohibit
   const radius = 11.5 * scale;
   const stroke = 2.2 * scale;
   elements.push({ type: 'circle', cx: x, cy: y, r: radius, fill: 'none', stroke: 'rgb(220,0,0)', strokeWidth: stroke });
-  elements.push({
-    type: 'group',
-    transform: `rotate(45 ${x} ${y})`,
-    children: [{ type: 'rect', x: x - stroke / 2, y: y - radius, width: stroke, height: radius * 2, fill: 'rgb(220,0,0)' }],
-  });
+  elements.push({ type: 'group', transform: `rotate(45 ${x} ${y})`, children: [{ type: 'rect', x: x - stroke / 2, y: y - radius, width: stroke, height: radius * 2, fill: 'rgb(220,0,0)' }] });
   return elements;
 }
 
 export function renderTemplate(config: SignRenderConfig): string {
-  const { widthMm: w, heightMm: h, frameType, appearance } = config;
+  const requested = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
+  const w = requested.width;
+  const h = requested.height;
+  const { frameType, appearance } = config;
   const frame = cmykToRgb(appearance.frameColor);
   const bg = cmykToRgb(appearance.backgroundColor);
   const s = scaleFor(w, h);
   const margin = 5 * s;
   const stroke = 2 * s;
   const pad = 7 * s;
-  const cx = w / 2;
-  const cy = h / 2;
-  const elements: GraphicElement[] = [{ type: 'rect', x: 0, y: 0, width: w, height: h, fill: bg }];
-  const inner = { x: margin, y: margin, width: w - margin * 2, height: h - margin * 2 };
+  const cx = requested.centerX;
+  const cy = requested.centerY;
+  const elements: GraphicElement[] = [];
 
-  if (frameType === 'simple') {
+  if (frameType === 'simple' || frameType === 'header') {
+    elements.push({ type: 'rect', x: 0, y: 0, width: w, height: h, fill: bg });
+    const inner = { x: margin, y: margin, width: w - margin * 2, height: h - margin * 2 };
     elements.push({ type: 'rect', ...inner, fill: 'none', stroke: frame, strokeWidth: stroke, rx: 4 * s, ry: 4 * s });
-  }
-  if (frameType === 'header') {
-    elements.push({ type: 'rect', ...inner, fill: 'none', stroke: frame, strokeWidth: stroke, rx: 4 * s, ry: 4 * s });
-    const headerH = 28 * s;
-    elements.push({ type: 'rect', x: margin, y: margin, width: inner.width, height: headerH, fill: frame, rx: 4 * s, ry: 4 * s });
-    elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
-    elements.push({ type: 'text', x: cx, y: margin + headerH / 2, text: (config.heading || 'AVISO').toUpperCase(), fontSize: 16 * s, fontWeight: 800, fill: '#fff', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: 'middle', dominantBaseline: 'middle' });
-  }
-  if (frameType === 'circular') {
-    const r = Math.min(w, h) / 2 - margin;
-    elements.push({ type: 'circle', cx, cy, r, fill: bg, stroke: frame, strokeWidth: stroke });
-  }
-  if (frameType === 'diamond') {
-    const d = Math.min(w, h) / 2 - margin;
-    elements.push({ type: 'polygon', points: `${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}`, fill: bg, stroke: frame, strokeWidth: stroke });
-  }
-  if (frameType === 'triangle') {
-    const top = margin;
-    const baseY = h - margin;
-    elements.push({ type: 'polygon', points: `${cx},${top} ${w - margin},${baseY} ${margin},${baseY}`, fill: bg, stroke: frame, strokeWidth: stroke });
+
+    if (frameType === 'header') {
+      const headerH = 28 * s;
+      elements.push({ type: 'rect', x: margin, y: margin, width: inner.width, height: headerH, fill: frame, rx: 4 * s, ry: 4 * s });
+      elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
+      elements.push({ type: 'text', x: cx, y: margin + headerH / 2, text: (config.heading || 'AVISO').toUpperCase(), fontSize: 16 * s, fontWeight: 800, fill: '#fff', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: 'middle', dominantBaseline: 'middle' });
+    }
+  } else if (frameType === 'circular') {
+    const radius = requested.radius! - margin;
+    elements.push({ type: 'circle', cx, cy, r: radius, fill: bg, stroke: frame, strokeWidth: stroke });
+  } else if (frameType === 'diamond') {
+    const points = insetPolygon(requested.points!, margin);
+    elements.push({ type: 'polygon', points: pointsString(requested.points!), fill: bg, stroke: frame, strokeWidth: stroke });
+    elements.push({ type: 'polygon', points: pointsString(points), fill: 'none', stroke: frame, strokeWidth: stroke });
+  } else if (frameType === 'triangle') {
+    const points = insetPolygon(requested.points!, margin);
+    elements.push({ type: 'polygon', points: pointsString(requested.points!), fill: bg, stroke: frame, strokeWidth: stroke });
+    elements.push({ type: 'polygon', points: pointsString(points), fill: 'none', stroke: frame, strokeWidth: stroke });
   }
 
   const contentTop = frameType === 'header' ? margin + 32 * s : margin + pad;
@@ -90,14 +91,18 @@ export function renderTemplate(config: SignRenderConfig): string {
   const textSize = clamp(10 * s, 8, 42);
   const lineH = textSize * 1.12;
   const hasIcon = config.showIcon && Boolean(config.iconSvg);
-  const lines = wrap(config.message || '', Math.max(8, Math.floor((w - pad * 2) / (5.5 * s))));
-  const blockH = lines.length * lineH;
   const textGap = 6 * s;
   const iconScale = 3.8 * s;
   let textX = cx;
   let textY = (contentTop + contentBottom) / 2;
   let iconX = cx;
   let iconY = contentTop + 24 * s;
+
+  const isNonRectangular = frameType === 'circular' || frameType === 'diamond' || frameType === 'triangle';
+  const usableWidth = isNonRectangular ? Math.min(w, h) - 2 * (margin + pad) : w - 2 * pad;
+  const baseMaxChars = Math.max(8, Math.floor(usableWidth / (5.5 * s)));
+  const preliminaryLines = wrap(config.message || '', baseMaxChars);
+  const blockH = preliminaryLines.length * lineH;
 
   if (hasIcon && appearance.pictogramPosition === 'top') {
     const available = Math.max(24 * s, contentBottom - contentTop - blockH - textGap);
@@ -114,24 +119,15 @@ export function renderTemplate(config: SignRenderConfig): string {
   }
 
   if (hasIcon) elements.push(...iconElements(config.iconSvg, iconX, iconY, iconScale, appearance.prohibition));
-  const textAnchor = appearance.pictogramPosition === 'left' ? 'start' : appearance.pictogramPosition === 'right' ? 'end' : 'middle';
-  const maxTextWidth = appearance.pictogramPosition === 'top' ? w - pad * 2 : w - pad * 2 - 36 * s;
+
+  const sideReduction = appearance.pictogramPosition === 'top' ? 0 : 36 * s;
+  const maxTextWidth = Math.max(35 * s, usableWidth - sideReduction);
   const finalLines = wrap(config.message || '', Math.max(8, Math.floor(maxTextWidth / (5.5 * s))));
   const finalBlockH = finalLines.length * lineH;
   const adjustedTextY = appearance.pictogramPosition === 'top' && hasIcon ? iconY + 20 * s + textGap + finalBlockH / 2 : textY;
+  const textAnchor = appearance.pictogramPosition === 'left' ? 'start' : appearance.pictogramPosition === 'right' ? 'end' : 'middle';
 
-  finalLines.forEach((line, index) => elements.push({
-    type: 'text',
-    x: textX,
-    y: adjustedTextY + (index - (finalLines.length - 1) / 2) * lineH,
-    text: line,
-    fontSize: textSize,
-    fontWeight: 800,
-    fill: '#000',
-    fontFamily: 'Barlow Semi Condensed, sans-serif',
-    anchor: textAnchor,
-    dominantBaseline: 'middle',
-  }));
+  finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: adjustedTextY + (index - (finalLines.length - 1) / 2) * lineH, text: line, fontSize: textSize, fontWeight: 800, fill: '#000', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
 
   const composition: Composition = { widthMm: w, heightMm: h, elements };
   return renderCompositionToSvg(composition);
