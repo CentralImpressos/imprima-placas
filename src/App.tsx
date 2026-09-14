@@ -27,17 +27,64 @@ const TRIANGLE_SIDES = [100, 150, 200, 300, 400, 500, 600, 700, 800];
 const SQUARE_SIZES = [100, 150, 200, 300, 400, 500, 600, 700, 800];
 const triangleHeight = (side: number) => side * Math.sqrt(3) / 2;
 
-function cmykToHex({ c, m, y, k }: CmykColor): string {
-  const C = clamp(c) / 100, M = clamp(m) / 100, Y = clamp(y) / 100, K = clamp(k) / 100;
-  return `#${[Math.round(255 * (1 - C) * (1 - K)), Math.round(255 * (1 - M) * (1 - K)), Math.round(255 * (1 - Y) * (1 - K))].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+function cmykToHex(color: CmykColor): string {
+  const c = clamp(color.c);
+  const m = clamp(color.m);
+  const y = clamp(color.y);
+  const k = clamp(color.k);
+
+  const override = CMYK_PRESETS.find(
+    (item) =>
+      item.color.c === c &&
+      item.color.m === m &&
+      item.color.y === y &&
+      item.color.k === k,
+  );
+
+  if (override) {
+    return override.hex;
+  }
+
+  const C = c / 100;
+  const M = m / 100;
+  const Y = y / 100;
+  const K = k / 100;
+
+  return `#${[
+    Math.round(255 * (1 - C) * (1 - K)),
+    Math.round(255 * (1 - M) * (1 - K)),
+    Math.round(255 * (1 - Y) * (1 - K)),
+  ]
+    .map((v) => v.toString(16).padStart(2, '0'))
+    .join('')}`;
 }
 function hexToCmyk(hex: string): CmykColor {
-  const raw = hex.replace('#', '');
-  const full = raw.length === 3 ? raw.split('').map((ch) => ch + ch).join('') : raw.padEnd(6, '0').slice(0, 6);
-  const r = parseInt(full.slice(0, 2), 16) / 255, g = parseInt(full.slice(2, 4), 16) / 255, b = parseInt(full.slice(4, 6), 16) / 255;
+  const normalized = hex.toUpperCase();
+
+  const override = CMYK_PRESETS.find(
+    (item) => item.hex.toUpperCase() === normalized,
+  );
+
+  if (override) {
+    return { ...override.color };
+  }
+
+  const r = parseInt(normalized.slice(1, 3), 16) / 255;
+  const g = parseInt(normalized.slice(3, 5), 16) / 255;
+  const b = parseInt(normalized.slice(5, 7), 16) / 255;
+
   const k = 1 - Math.max(r, g, b);
-  if (k >= 0.999) return { c: 0, m: 0, y: 0, k: 100 };
-  return { c: Math.round(clamp(((1 - r - k) / (1 - k)) * 100)), m: Math.round(clamp(((1 - g - k) / (1 - k)) * 100)), y: Math.round(clamp(((1 - b - k) / (1 - k)) * 100)), k: Math.round(clamp(k * 100)) };
+
+  if (k >= 1) {
+    return { c: 0, m: 0, y: 0, k: 100 };
+  }
+
+  return {
+    c: Math.round(((1 - r - k) / (1 - k)) * 100),
+    m: Math.round(((1 - g - k) / (1 - k)) * 100),
+    y: Math.round(((1 - b - k) / (1 - k)) * 100),
+    k: Math.round(k * 100),
+  };
 }
 function ColorFields({ label, color, setColor }: { label: string; color: CmykColor; setColor: (color: CmykColor) => void }) {
   return <div className="color-block">
