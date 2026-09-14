@@ -53,7 +53,8 @@ function iconElements(
 
   if (!circle && !prohibition) return elements;
 
-  const ringStroke = Math.max(1.2, ringRadiusMm * 0.12);
+  // Traço mais grosso (~16% do raio), com piso mínimo legível.
+  const ringStroke = Math.max(1.8, ringRadiusMm * 0.16);
 
   if (circle || prohibition) {
     elements.push({
@@ -163,18 +164,21 @@ export function renderTemplate(config: SignRenderConfig): string {
   const textGap = 6 * s;
 
   // Largura-alvo do bloco do pictograma (com ou sem anel).
-  // Sem anel, mantém a mesma largura visual — texto fica com a mesma margem lateral.
   const targetBlockWidth = Math.min(usableWidth * 0.72, usableHeight * 0.55);
   const ringRadius = targetBlockWidth / 2;
 
-  // Ícone ~58% do diâmetro interno do anel.
-  // Letras (alpha-*) têm mais padding no glyph → boost ~35%.
-  const innerDiameter = ringRadius * 2 * 0.88;
-  const letterBoost = isLetterSlug(config.iconSlug) ? 1.35 : 1;
-  const iconScale = ((innerDiameter * 0.58) / 24) * letterBoost;
+  // Ícone maior dentro do anel (~78% do diâmetro interno).
+  // Ainda com folga para não encostar no traço.
+  // Letras (alpha-*) têm mais padding no glyph → boost ~30%.
+  const innerDiameter = ringRadius * 2 * 0.84; // desconta traço mais grosso
+  const letterBoost = isLetterSlug(config.iconSlug) ? 1.3 : 1;
+  const iconScale = ((innerDiameter * 0.78) / 24) * letterBoost;
 
-  let finalLines = wrap(config.message || '', Math.max(4, Math.floor(targetBlockWidth / Math.max(1, 5.2 * s))));
-  let finalFontSize = clamp(targetBlockWidth * 0.18, 10, 48);
+  // Texto: largura mínima = diâmetro externo do círculo.
+  // font-size pensado para que ~8–9 chars (ex.: PROIBIDO) cubram essa largura.
+  const textWidthTarget = targetBlockWidth;
+  let finalLines = wrap(config.message || '', Math.max(4, Math.floor(textWidthTarget / Math.max(1, 5.0 * s))));
+  let finalFontSize = clamp(textWidthTarget * 0.22, 11, 52);
   let finalLineHeight = finalFontSize * 1.12;
   let textX = cx;
   let textY = (contentTop + contentBottom) / 2;
@@ -185,7 +189,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     let blockScale = 1;
     for (let iteration = 0; iteration < 3; iteration += 1) {
       const blockW = targetBlockWidth * blockScale;
-      const scaledFont = Math.max(10, finalFontSize * blockScale);
+      const scaledFont = Math.max(11, finalFontSize * blockScale);
       const scaledLineH = scaledFont * 1.12;
       const textH = finalLines.length * scaledLineH;
       const blockH = blockW + textGap * blockScale + textH;
@@ -199,16 +203,17 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     finalRingRadius = ringRadius * blockScale;
     finalIconScale = iconScale * blockScale;
-    finalFontSize = Math.max(10, finalFontSize * blockScale);
+    finalFontSize = Math.max(11, finalFontSize * blockScale);
     finalLineHeight = finalFontSize * 1.12;
 
-    // Texto limitado à largura do bloco do pictograma.
+    // Largura do texto >= diâmetro externo do anel.
+    const outerDiameter = finalRingRadius * 2;
     finalLines = wrap(
       config.message || '',
-      Math.max(4, Math.floor((finalRingRadius * 2) / Math.max(1, finalFontSize * 0.55))),
+      Math.max(4, Math.floor(outerDiameter / Math.max(1, finalFontSize * 0.52))),
     );
 
-    const finalBlockW = finalRingRadius * 2;
+    const finalBlockW = outerDiameter;
     const finalTextH = finalLines.length * finalLineHeight;
     const finalBlockH = finalBlockW + textGap * blockScale + finalTextH;
     const finalBlockTop = contentTop + Math.max(0, (usableHeight - finalBlockH) / 2);
@@ -254,7 +259,7 @@ export function renderTemplate(config: SignRenderConfig): string {
     }
   } else {
     finalLines = wrap(config.message || '', Math.max(4, Math.floor(usableWidth / Math.max(1, 5.5 * s))));
-    finalFontSize = clamp(12 * s, 10, 48);
+    finalFontSize = clamp(12 * s, 11, 52);
     finalLineHeight = finalFontSize * 1.12;
   }
 
