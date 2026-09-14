@@ -216,17 +216,17 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     if (frameType === 'header') {
       const headerH = 28 * s;
-      const headerPadX = 6 * s;
+      // Margens laterais menores para o texto preencher melhor a faixa.
+      const headerPadX = 3 * s;
       const headerMaxW = Math.max(20, inner.width - headerPadX * 2);
       const headingText = (config.heading || 'AVISO').toUpperCase();
-      // Fonte preferida generosa; encolhe para caber na faixa.
-      const preferredHeaderFont = 16 * s;
+      const preferredHeaderFont = 17 * s;
       const maxFontForHeading = headerMaxW / Math.max(1, headingText.length * CHAR_WIDTH_FACTOR);
       const headerFont = Math.min(preferredHeaderFont, maxFontForHeading);
 
       elements.push({ type: 'rect', x: margin, y: margin, width: inner.width, height: headerH, fill: frame, rx: 4 * s, ry: 4 * s });
       elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
-      // Centro vertical exato da faixa do cabeçalho.
+      // Texto do cabeçalho sempre na cor do fundo.
       elements.push({
         type: 'text',
         x: cx,
@@ -234,7 +234,7 @@ export function renderTemplate(config: SignRenderConfig): string {
         text: headingText,
         fontSize: headerFont,
         fontWeight: 800,
-        fill: '#fff',
+        fill: bg,
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         anchor: 'middle',
         dominantBaseline: 'middle',
@@ -345,14 +345,12 @@ export function renderTemplate(config: SignRenderConfig): string {
       appearance.prohibition,
     ));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    // Pictograma um pouco maior; texto um pouco menor.
     const preferredPict = Math.min(usableHeight * 0.64, usableWidth * 0.36);
     const minPict = Math.min(usableHeight * 0.28, usableWidth * 0.18);
     const gap = 6 * s;
 
     let pictSize = preferredPict;
     let textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
-    // Alvo de largura do texto ~88% da área (fonte um pouco menor que antes).
     let fitted = fitTextToTargetWidth(
       message,
       textAreaW * 0.88,
