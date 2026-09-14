@@ -22,7 +22,12 @@ export const SIGN_PRESETS: SignPreset[] = [
     heading: 'AVISO',
     message: 'É PROIBIDA A ENTRADA DE ANIMAIS',
     icon: 'mdi:dog',
-    defaults: { frameColor: DEFAULT_FRAME_COLOR, pictogramPosition: 'left' },
+    defaults: {
+      frameColor: DEFAULT_FRAME_COLOR,
+      pictogramPosition: 'left',
+      circle: true,
+      prohibition: true,
+    },
   },
   {
     id: 'criancas-acompanhadas',
