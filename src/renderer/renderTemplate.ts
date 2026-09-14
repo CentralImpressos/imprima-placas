@@ -115,8 +115,8 @@ export function renderTemplate(config: SignRenderConfig): string {
     elements.push({ type: 'rect', ...inner, fill: 'none', stroke: frame, strokeWidth: stroke, rx: 4 * s, ry: 4 * s });
     if (frameType === 'header') {
       const headerH = 30 * s;
-      const headerPadX = 2 * s;
-      const headerPadY = 1.5 * s;
+      const headerPadX = 1 * s;
+      const headerPadY = 0.8 * s;
       const headerMaxW = Math.max(20, inner.width - headerPadX * 2);
       const headingText = (config.heading || 'AVISO').toUpperCase();
       const headingFit = fitTextToTargetWidth(headingText, headerMaxW, headerMaxW, Math.max(10, headerH - headerPadY * 2), 7);
@@ -124,9 +124,7 @@ export function renderTemplate(config: SignRenderConfig): string {
       elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
       const headerLines = headingFit.lines.filter(Boolean);
       const headerLineH = headingFit.lineHeight;
-      const headerTextH = headerLines.length * headerLineH;
       headerLines.forEach((line, index) => elements.push({ type: 'text', x: cx, y: margin + headerH / 2 + (index - (headerLines.length - 1) / 2) * headerLineH, text: line, fontSize: headingFit.fontSize, fontWeight: 800, fill: bg, fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: 'middle', dominantBaseline: 'middle' }));
-      void headerTextH;
     }
   } else if (frameType === 'circular') {
     const outerRadius = geometry.radius!;
@@ -152,11 +150,9 @@ export function renderTemplate(config: SignRenderConfig): string {
   const letterBoost = isLetterSlug(config.iconSlug) ? 1.6 : 1;
   const message = config.message.trim();
 
-  // Sem texto: o pictograma ocupa o centro geométrico real da área útil.
-  // No triângulo, o centro usado é o centroide/incentro, 2/3 da altura a partir do vértice.
   if (!message && hasIcon) {
     const centerY = frameType === 'triangle' ? h * (2 / 3) : (frameType === 'header' ? (contentTop + contentBottom) / 2 : cy);
-    const pictSize = Math.min(usableWidth * 0.7, usableHeight * 0.7);
+    const pictSize = Math.min(usableWidth * 0.78, usableHeight * 0.78);
     elements.push(...iconElements(config.iconSvg, isNonRectangular ? cx : contentCenterX, centerY, computeIconScale(pictSize, needsRing, letterBoost), needsRing ? pictSize / 2 : 0, appearance.circle, appearance.prohibition, iconRgb));
     return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
   }
@@ -246,6 +242,9 @@ export function renderTemplate(config: SignRenderConfig): string {
     textY = contentTop + (usableHeight - textH) / 2 + textH / 2;
   }
 
+  if (message && (frameType === 'simple' || frameType === 'header')) {
+    textY += 1.5 * s;
+  }
   const textAnchor = position === 'left' ? 'start' : position === 'right' ? 'end' : 'middle';
   finalLines.forEach((line, index) => elements.push({ type: 'text', x: textX, y: textY + (index - (finalLines.length - 1) / 2) * finalLineHeight, text: line, fontSize: finalFontSize, fontWeight: 800, fill: '#000', fontFamily: 'Barlow Semi Condensed, sans-serif', anchor: textAnchor, dominantBaseline: 'middle' }));
   return renderCompositionToSvg({ widthMm: w, heightMm: h, elements });
