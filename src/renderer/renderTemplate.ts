@@ -53,7 +53,6 @@ function iconElements(
 
   if (!circle && !prohibition) return elements;
 
-  // Traço mais grosso (~16% do raio), com piso mínimo legível.
   const ringStroke = Math.max(1.8, ringRadiusMm * 0.16);
 
   if (circle || prohibition) {
@@ -91,6 +90,9 @@ function isLetterSlug(slug?: string): boolean {
   return /mdi:alpha-[a-z](?:-|$)/i.test(slug) || /letter-/i.test(slug);
 }
 
+/** Estimativa de largura de um glifo em Barlow Semi Condensed (bold). */
+const CHAR_WIDTH_FACTOR = 0.56;
+
 export function renderTemplate(config: SignRenderConfig): string {
   const geometry = getFrameGeometry(config.frameType, config.widthMm, config.heightMm);
   const { width: w, height: h, centerX: cx } = geometry;
@@ -99,8 +101,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   const bg = cmykToRgb(appearance.backgroundColor);
   const s = scaleFor(w, h);
 
-  // Margem externa (borda → moldura) um pouco maior;
-  // respiro interno (moldura → conteúdo) menor.
   const margin = 4 * s;
   const stroke = 2 * s;
   const pad = 2.5 * s;
@@ -162,37 +162,36 @@ export function renderTemplate(config: SignRenderConfig): string {
 
   const needsRing = appearance.circle || appearance.prohibition;
   const textGap = 6 * s;
+  const position = appearance.pictogramPosition;
 
-  // Largura-alvo do bloco do pictograma (com ou sem anel).
+  // Bloco de referência do pictograma (topo).
   const targetBlockWidth = Math.min(usableWidth * 0.72, usableHeight * 0.55);
   const ringRadius = targetBlockWidth / 2;
 
-  // Ícone maior dentro do anel (~78% do diâmetro interno).
-  // Ainda com folga para não encostar no traço.
-  // Letras (alpha-*) têm mais padding no glyph → boost ~30%.
-  const innerDiameter = ringRadius * 2 * 0.84; // desconta traço mais grosso
+  const innerDiameter = ringRadius * 2 * 0.84;
   const letterBoost = isLetterSlug(config.iconSlug) ? 1.3 : 1;
   const iconScale = ((innerDiameter * 0.78) / 24) * letterBoost;
 
-  // Texto: largura mínima = diâmetro externo do círculo.
-  // font-size pensado para que ~8–9 chars (ex.: PROIBIDO) cubram essa largura.
-  const textWidthTarget = targetBlockWidth;
+  // Texto no topo: um pouco mais largo que o diâmetro externo do anel.
+  // 0.26 * D e CHAR_WIDTH_FACTOR 0.56 → ~8 chars cobrem ≥ diâmetro.
+  const textWidthTarget = targetBlockWidth * 1.08;
   let finalLines = wrap(config.message || '', Math.max(4, Math.floor(textWidthTarget / Math.max(1, 5.0 * s))));
-  let finalFontSize = clamp(textWidthTarget * 0.22, 11, 52);
+  let finalFontSize = clamp(textWidthTarget * 0.26, 12, 56);
   let finalLineHeight = finalFontSize * 1.12;
   let textX = cx;
   let textY = (contentTop + contentBottom) / 2;
   let finalRingRadius = ringRadius;
   let finalIconScale = iconScale;
 
-  if (hasIcon && appearance.pictogramPosition === 'top') {
+  if (hasIcon && position === 'top') {
     let blockScale = 1;
     for (let iteration = 0; iteration < 3; iteration += 1) {
-      const blockW = targetBlockWidth * blockScale;
-      const scaledFont = Math.max(11, finalFontSize * blockScale);
+      const blockW = Math.max(targetBlockWidth, textWidthTarget) * blockScale;
+      const scaledFont = Math.max(12, finalFontSize * blockScale);
       const scaledLineH = scaledFont * 1.12;
       const textH = finalLines.length * scaledLineH;
-      const blockH = blockW + textGap * blockScale + textH;
+      const pictW = targetBlockWidth * blockScale;
+      const blockH = pictW + textGap * blockScale + textH;
       const next = Math.min(
         1,
         usableWidth / Math.max(1, blockW),
@@ -203,24 +202,25 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     finalRingRadius = ringRadius * blockScale;
     finalIconScale = iconScale * blockScale;
-    finalFontSize = Math.max(11, finalFontSize * blockScale);
+    finalFontSize = Math.max(12, finalFontSize * blockScale);
     finalLineHeight = finalFontSize * 1.12;
 
-    // Largura do texto >= diâmetro externo do anel.
+    // Largura alvo do texto = diâmetro externo do anel * 1.08
     const outerDiameter = finalRingRadius * 2;
+    const textTarget = outerDiameter * 1.08;
     finalLines = wrap(
       config.message || '',
-      Math.max(4, Math.floor(outerDiameter / Math.max(1, finalFontSize * 0.52))),
+      Math.max(4, Math.floor(textTarget / Math.max(1, finalFontSize * CHAR_WIDTH_FACTOR))),
     );
 
-    const finalBlockW = outerDiameter;
+    const finalPictW = outerDiameter;
     const finalTextH = finalLines.length * finalLineHeight;
-    const finalBlockH = finalBlockW + textGap * blockScale + finalTextH;
+    const finalBlockH = finalPictW + textGap * blockScale + finalTextH;
     const finalBlockTop = contentTop + Math.max(0, (usableHeight - finalBlockH) / 2);
 
     textX = cx;
-    textY = finalBlockTop + finalBlockW + textGap * blockScale + finalTextH / 2;
-    const iconY = finalBlockTop + finalBlockW / 2;
+    textY = finalBlockTop + finalPictW + textGap * blockScale + finalTextH / 2;
+    const iconY = finalBlockTop + finalPictW / 2;
 
     elements.push(...iconElements(
       config.iconSvg,
@@ -231,41 +231,75 @@ export function renderTemplate(config: SignRenderConfig): string {
       appearance.circle,
       appearance.prohibition,
     ));
-  } else if (hasIcon) {
-    finalIconScale = iconScale;
+  } else if (hasIcon && (position === 'left' || position === 'right')) {
+    // Lado: pictograma limitado pela altura útil e por uma fração da largura.
+    const sideRingRadius = Math.min(
+      usableHeight * 0.38,
+      usableWidth * 0.28,
+      ringRadius,
+    );
+    const sideInnerDiameter = sideRingRadius * 2 * 0.84;
+    const sideIconScale = ((sideInnerDiameter * 0.78) / 24) * letterBoost;
+    finalRingRadius = sideRingRadius;
+    finalIconScale = sideIconScale;
 
-    if (appearance.pictogramPosition === 'left') {
-      const iconX = margin + pad + finalRingRadius;
-      textX = iconX + finalRingRadius + 8 * s;
-      textY = (contentTop + contentBottom) / 2;
+    const gap = 10 * s;
+    const pictBlock = sideRingRadius * 2;
+    const textAreaWidth = Math.max(40 * s, usableWidth - pictBlock - gap);
+
+    finalFontSize = clamp(Math.min(textAreaWidth * 0.14, usableHeight * 0.12), 10, 42);
+    finalLineHeight = finalFontSize * 1.12;
+    finalLines = wrap(
+      config.message || '',
+      Math.max(4, Math.floor(textAreaWidth / Math.max(1, finalFontSize * CHAR_WIDTH_FACTOR))),
+    );
+
+    const textBlockH = finalLines.length * finalLineHeight;
+    const contentMidY = (contentTop + contentBottom) / 2;
+
+    // Centraliza o par ícone+texto na altura útil.
+    const pairH = Math.max(pictBlock, textBlockH);
+    const pairTop = contentMidY - pairH / 2;
+    const iconY = pairTop + pairH / 2;
+    textY = pairTop + pairH / 2;
+
+    if (position === 'left') {
+      const iconX = margin + pad + sideRingRadius;
+      textX = iconX + sideRingRadius + gap;
       elements.push(...iconElements(
-        config.iconSvg, iconX, textY, finalIconScale,
-        needsRing ? finalRingRadius : 0,
-        appearance.circle, appearance.prohibition,
+        config.iconSvg,
+        iconX,
+        iconY,
+        finalIconScale,
+        needsRing ? sideRingRadius : 0,
+        appearance.circle,
+        appearance.prohibition,
       ));
-      const maxTextWidth = Math.max(35 * s, usableWidth - finalRingRadius * 2 - 12 * s);
-      finalLines = wrap(config.message || '', Math.max(4, Math.floor(maxTextWidth / Math.max(1, 5.5 * s))));
-    } else if (appearance.pictogramPosition === 'right') {
-      const iconX = w - margin - pad - finalRingRadius;
-      textX = iconX - finalRingRadius - 8 * s;
-      textY = (contentTop + contentBottom) / 2;
+    } else {
+      const iconX = w - margin - pad - sideRingRadius;
+      textX = iconX - sideRingRadius - gap;
       elements.push(...iconElements(
-        config.iconSvg, iconX, textY, finalIconScale,
-        needsRing ? finalRingRadius : 0,
-        appearance.circle, appearance.prohibition,
+        config.iconSvg,
+        iconX,
+        iconY,
+        finalIconScale,
+        needsRing ? sideRingRadius : 0,
+        appearance.circle,
+        appearance.prohibition,
       ));
-      const maxTextWidth = Math.max(35 * s, usableWidth - finalRingRadius * 2 - 12 * s);
-      finalLines = wrap(config.message || '', Math.max(4, Math.floor(maxTextWidth / Math.max(1, 5.5 * s))));
     }
   } else {
+    // Só texto, sem pictograma.
     finalLines = wrap(config.message || '', Math.max(4, Math.floor(usableWidth / Math.max(1, 5.5 * s))));
-    finalFontSize = clamp(12 * s, 11, 52);
+    finalFontSize = clamp(12 * s, 12, 56);
     finalLineHeight = finalFontSize * 1.12;
+    textX = cx;
+    textY = (contentTop + contentBottom) / 2;
   }
 
-  const textAnchor = appearance.pictogramPosition === 'left'
+  const textAnchor = position === 'left'
     ? 'start'
-    : appearance.pictogramPosition === 'right'
+    : position === 'right'
       ? 'end'
       : 'middle';
 
