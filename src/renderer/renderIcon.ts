@@ -17,13 +17,11 @@ export async function renderIcon(
       return '';
     }
 
-    // The composition renderer positions icons using a 24x24 coordinate
-    // system. Keeping the generated Iconify body in the same coordinate
-    // system prevents the pictogram from becoming hundreds of percent larger
-    // than the prohibition ring or the plate itself.
+    // viewBox 24x24 + currentColor para herdar a cor do grupo pai.
     const result = buildIcon(icon, {
       width: 24,
       height: 24,
+      color: 'currentColor',
       ...customisations,
     });
 
