@@ -18,11 +18,65 @@ const FRAME_OPTIONS: Array<[FrameType, string]> = [
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
 
+function cmykToHex({ c, m, y, k }: CmykColor): string {
+  const C = clamp(c) / 100;
+  const M = clamp(m) / 100;
+  const Y = clamp(y) / 100;
+  const K = clamp(k) / 100;
+  const r = Math.round(255 * (1 - C) * (1 - K));
+  const g = Math.round(255 * (1 - M) * (1 - K));
+  const b = Math.round(255 * (1 - Y) * (1 - K));
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function hexToCmyk(hex: string): CmykColor {
+  const raw = hex.replace('#', '');
+  const full = raw.length === 3
+    ? raw.split('').map((ch) => ch + ch).join('')
+    : raw.padEnd(6, '0').slice(0, 6);
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  const k = 1 - Math.max(r, g, b);
+  if (k >= 0.999) return { c: 0, m: 0, y: 0, k: 100 };
+  const c = ((1 - r - k) / (1 - k)) * 100;
+  const m = ((1 - g - k) / (1 - k)) * 100;
+  const y = ((1 - b - k) / (1 - k)) * 100;
+  return {
+    c: Math.round(clamp(c)),
+    m: Math.round(clamp(m)),
+    y: Math.round(clamp(y)),
+    k: Math.round(clamp(k * 100)),
+  };
+}
+
 function ColorFields({ label, color, setColor }: { label: string; color: CmykColor; setColor: (color: CmykColor) => void }) {
+  const hex = cmykToHex(color);
   return <div className="color-block">
-    <label className="field-label">{label}</label>
+    <div className="color-block__header">
+      <label className="field-label">{label}</label>
+      <input
+        className="color-picker"
+        type="color"
+        value={hex}
+        title="Selecionar cor"
+        onChange={(event) => setColor(hexToCmyk(event.target.value))}
+      />
+    </div>
     <div className="cmyk-grid">
-      {(['c', 'm', 'y', 'k'] as const).map((key) => <label key={key}><span>{key.toUpperCase()}</span><input className="cmyk-input" type="number" min="0" max="100" value={color[key]} onChange={(event) => setColor({ ...color, [key]: clamp(Number(event.target.value)) })} /></label>)}
+      {(['c', 'm', 'y', 'k'] as const).map((key) => (
+        <label key={key}>
+          <span>{key.toUpperCase()}</span>
+          <input
+            className="cmyk-input"
+            type="number"
+            min="0"
+            max="100"
+            value={color[key]}
+            onChange={(event) => setColor({ ...color, [key]: clamp(Number(event.target.value)) })}
+          />
+        </label>
+      ))}
     </div>
   </div>;
 }
@@ -62,7 +116,6 @@ export default function App() {
     setShowIcon(preset.icon !== undefined);
     setCircle(Boolean(preset.defaults?.circle));
     setProhibition(Boolean(preset.defaults?.prohibition));
-    // Cabeçalho: padrão pictograma à esquerda.
     const defaultPos: PictogramPosition = preset.frameType === 'header'
       ? (preset.defaults?.pictogramPosition ?? 'left')
       : (preset.defaults?.pictogramPosition ?? 'top');
@@ -97,7 +150,6 @@ export default function App() {
     setFrameType(next);
     const nextPreset = SIGN_PRESETS.find((item) => item.frameType === next);
     if (nextPreset) setPresetId(nextPreset.id);
-    // Ao mudar para cabeçalho, força posição esquerda se o preset não definir outra.
     if (next === 'header') {
       setPosition(nextPreset?.defaults?.pictogramPosition ?? 'left');
     }

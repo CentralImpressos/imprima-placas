@@ -159,10 +159,6 @@ function fitText(
   return { lines, fontSize, lineHeight: fontSize * 1.1 };
 }
 
-/**
- * Prefere preencher a largura alvo com o mínimo de linhas possível.
- * Cresce a fonte enquanto couber em altura.
- */
 function fitTextToTargetWidth(
   message: string,
   targetWidthMm: number,
@@ -171,7 +167,6 @@ function fitTextToTargetWidth(
   minFontSize = 9,
 ): { lines: string[]; fontSize: number; lineHeight: number } {
   const widthCap = Math.min(targetWidthMm, maxWidthMm);
-  // Semente: fonte que coloca ~12 chars na largura (menos linhas em textos longos).
   const seedFont = widthCap / (12 * CHAR_WIDTH_FACTOR);
   let fitted = fitText(message, seedFont, widthCap, maxHeightMm, minFontSize);
 
@@ -221,14 +216,23 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     if (frameType === 'header') {
       const headerH = 28 * s;
+      const headerPadX = 6 * s;
+      const headerMaxW = Math.max(20, inner.width - headerPadX * 2);
+      const headingText = (config.heading || 'AVISO').toUpperCase();
+      // Fonte preferida generosa; encolhe para caber na faixa.
+      const preferredHeaderFont = 16 * s;
+      const maxFontForHeading = headerMaxW / Math.max(1, headingText.length * CHAR_WIDTH_FACTOR);
+      const headerFont = Math.min(preferredHeaderFont, maxFontForHeading);
+
       elements.push({ type: 'rect', x: margin, y: margin, width: inner.width, height: headerH, fill: frame, rx: 4 * s, ry: 4 * s });
       elements.push({ type: 'rect', x: margin, y: margin + headerH - 4 * s, width: inner.width, height: 4 * s, fill: frame });
+      // Centro vertical exato da faixa do cabeçalho.
       elements.push({
         type: 'text',
         x: cx,
         y: margin + headerH / 2,
-        text: (config.heading || 'AVISO').toUpperCase(),
-        fontSize: 16 * s,
+        text: headingText,
+        fontSize: headerFont,
         fontWeight: 800,
         fill: '#fff',
         fontFamily: 'Barlow Semi Condensed, sans-serif',
@@ -264,7 +268,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   const position = appearance.pictogramPosition;
   const letterBoost = isLetterSlug(config.iconSlug) ? 1.6 : 1;
   const message = config.message || '';
-  // Textos longos (muitas palavras) merecem largura extra no topo.
   const wordCount = message.trim().split(/\s+/).filter(Boolean).length;
 
   let finalLines: string[] = [];
@@ -279,8 +282,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     const gap = 7 * s;
 
     let pictSize = preferredPict;
-    // Mensagens curtas (~2 palavras): texto ≈ diâmetro do pictograma.
-    // Mensagens longas: usa quase toda a largura útil para evitar quebras excessivas.
     const textTargetW = wordCount <= 2
       ? Math.min(usableWidth, pictSize)
       : Math.min(usableWidth, Math.max(pictSize, usableWidth * 0.92));
@@ -344,17 +345,17 @@ export function renderTemplate(config: SignRenderConfig): string {
       appearance.prohibition,
     ));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    // Pictograma um pouco menor → mais espaço para o texto (menos quebras).
-    const preferredPict = Math.min(usableHeight * 0.58, usableWidth * 0.32);
-    const minPict = Math.min(usableHeight * 0.26, usableWidth * 0.16);
+    // Pictograma um pouco maior; texto um pouco menor.
+    const preferredPict = Math.min(usableHeight * 0.64, usableWidth * 0.36);
+    const minPict = Math.min(usableHeight * 0.28, usableWidth * 0.18);
     const gap = 6 * s;
 
     let pictSize = preferredPict;
-    let textAreaW = Math.max(40 * s, usableWidth - pictSize - gap);
-    // Mira preencher a área de texto com o mínimo de linhas.
+    let textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
+    // Alvo de largura do texto ~88% da área (fonte um pouco menor que antes).
     let fitted = fitTextToTargetWidth(
       message,
-      textAreaW * 0.98,
+      textAreaW * 0.88,
       textAreaW,
       usableHeight,
     );
@@ -365,8 +366,8 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     if (blockW > usableWidth && pictSize > minPict) {
       pictSize = clamp(usableWidth - gap - textW, minPict, preferredPict);
-      textAreaW = Math.max(40 * s, usableWidth - pictSize - gap);
-      fitted = fitTextToTargetWidth(message, textAreaW * 0.98, textAreaW, usableHeight);
+      textAreaW = Math.max(36 * s, usableWidth - pictSize - gap);
+      fitted = fitTextToTargetWidth(message, textAreaW * 0.88, textAreaW, usableHeight);
       textH = fitted.lines.length * fitted.lineHeight;
       textW = fitted.lines.reduce((m, l) => Math.max(m, l.length), 0) * fitted.fontSize * CHAR_WIDTH_FACTOR;
       blockW = pictSize + gap + textW;
