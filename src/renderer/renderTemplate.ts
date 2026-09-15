@@ -22,11 +22,7 @@ const cmykToRgb = ({ c, m, y, k }: { c: number; m: number; y: number; k: number 
   ];
 
   const preset = presets.find(
-    (item) =>
-      item.c === C &&
-      item.m === M &&
-      item.y === Y &&
-      item.k === K,
+    (item) => item.c === C && item.m === M && item.y === Y && item.k === K,
   );
 
   if (preset) return preset.rgb;
@@ -194,7 +190,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     if (hasOptionalFrame) elements.push({ type: 'polygon', points: pointsString(insetPolygon(outerPoints, margin)), fill: 'none', stroke: frame, strokeWidth: stroke, strokeLinejoin: 'round' });
   }
 
-  // Área de conteúdo com margens simétricas (centro visual correto no cabeçalho).
   const bodyPad = Math.max(pad * 1.6, Math.min(w, h) * 0.04);
   const contentTop = frameType === 'header' ? margin + 30 * s + bodyPad : margin + pad;
   const contentBottom = h - margin - bodyPad;
@@ -210,8 +205,6 @@ export function renderTemplate(config: SignRenderConfig): string {
   const message = config.message.trim();
 
   if (!message && hasIcon) {
-    // Cabeçalho: centraliza na área branca abaixo da faixa (não no centro da placa).
-    // Demais formas: centro geométrico / óptico habitual.
     let centerY: number;
     let maxR: number;
     if (frameType === 'header') {
@@ -219,7 +212,6 @@ export function renderTemplate(config: SignRenderConfig): string {
       const areaH = Math.max(1, contentBottom - contentTop);
       const areaW = Math.max(1, contentRight - contentLeft);
       const half = Math.min(areaW, areaH) / 2;
-      // Reserva um pouco para o stroke do anel e respiro da moldura.
       maxR = half * (needsRing ? 0.86 : 0.9);
     } else if (frameType === 'triangle') {
       centerY = h * (2 / 3);
@@ -228,7 +220,11 @@ export function renderTemplate(config: SignRenderConfig): string {
       centerY = cy;
       maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
     }
-    const pictSize = needsRing ? maxR * 2 : maxR * 2 * 0.9;
+
+    const pictogramBoost = frameType === 'simple' || frameType === 'header' ? 1.2 : 1;
+    const desiredPictSize = (needsRing ? maxR * 2 : maxR * 2 * 0.9) * pictogramBoost;
+    const pictSize = Math.min(desiredPictSize, maxR * 2);
+
     elements.push(...iconElements(
       config.iconSvg,
       isNonRectangular ? cx : contentCenterX,
@@ -290,7 +286,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     finalLines = fitted.lines; finalFontSize = fitted.fontSize; finalLineHeight = fitted.lineHeight;
     elements.push(...iconElements(config.iconSvg, contentCenterX, iconY, computeIconScale(pictSize, needsRing, letterBoost), needsRing ? pictSize / 2 : 0, appearance.circle, appearance.prohibition, iconRgb));
   } else if (hasIcon && (position === 'left' || position === 'right')) {
-    // Paisagem e retrato: bloco [pictograma + texto] cabe inteiro na área útil e fica centralizado.
     const preferredPict = Math.min(layoutHeight * 0.72, usableWidth * 0.3);
     const minPict = Math.min(layoutHeight * 0.32, usableWidth * 0.14);
     const gap = 5 * s;
@@ -302,7 +297,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     let blockW = pictSize + gap + textW;
     let blockH = Math.max(pictSize, textH);
 
-    // Se estoura a largura, reduz pictograma e refaz o texto.
     if (blockW > usableWidth && pictSize > minPict) {
       const maxTextForMinPict = Math.max(24 * s, usableWidth - minPict - gap);
       fitted = fitTextToTargetWidth(message, maxTextForMinPict * 0.95, maxTextForMinPict, layoutHeight);
@@ -317,7 +311,6 @@ export function renderTemplate(config: SignRenderConfig): string {
       blockH = Math.max(pictSize, textH);
     }
 
-    // Escala final se ainda passar (altura ou largura).
     let groupScale = 1;
     if (blockW > usableWidth || blockH > layoutHeight) {
       groupScale = Math.min(usableWidth / Math.max(1, blockW), layoutHeight / Math.max(1, blockH));
@@ -330,7 +323,6 @@ export function renderTemplate(config: SignRenderConfig): string {
     blockW = pictSize + effectiveGap + textW;
     blockH = Math.max(pictSize, textH);
 
-    // Centraliza o bloco horizontal e verticalmente na área útil.
     const blockLeft = contentLeft + Math.max(0, (usableWidth - blockW) / 2);
     const blockTop = layoutTop + Math.max(0, (layoutHeight - blockH) / 2);
     const iconY = blockTop + blockH / 2;
@@ -341,11 +333,11 @@ export function renderTemplate(config: SignRenderConfig): string {
 
     if (position === 'left') {
       const iconX = blockLeft + ringRadius;
-      textX = iconX + ringRadius + effectiveGap; // anchor start
+      textX = iconX + ringRadius + effectiveGap;
       elements.push(...iconElements(config.iconSvg, iconX, iconY, iconScale, needsRing ? ringRadius : 0, appearance.circle, appearance.prohibition, iconRgb));
     } else {
       const iconX = blockLeft + blockW - ringRadius;
-      textX = iconX - ringRadius - effectiveGap; // anchor end
+      textX = iconX - ringRadius - effectiveGap;
       elements.push(...iconElements(config.iconSvg, iconX, iconY, iconScale, needsRing ? ringRadius : 0, appearance.circle, appearance.prohibition, iconRgb));
     }
   } else {
