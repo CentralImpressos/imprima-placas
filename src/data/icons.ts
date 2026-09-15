@@ -112,7 +112,6 @@ export const PICTOGRAMAS_DISPONIVEIS = {
     { nome: 'Gramado', slug: 'mdi:grass' },
     { nome: 'Área de lazer', slug: 'mdi:slide' },
     { nome: 'Piscina', slug: 'mdi:pool' },
-    { nome: 'Animais permitidos', slug: 'mdi:dog' },
     { nome: 'Crianças', slug: 'mdi:account-child' },
     { nome: 'Adulto acompanhando criança', slug: 'mdi:human-male-boy' },
     { nome: 'Área verde', slug: 'mdi:tree' },
