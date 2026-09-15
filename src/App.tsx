@@ -10,7 +10,7 @@ import type { CmykColor, FrameType, PictogramPosition, PlateSize } from './types
 
 const FRAME_OPTIONS: Array<[FrameType, string]> = [['simple', 'Simples'], ['header', 'Cabeçalho'], ['diamond', 'Losango'], ['triangle', 'Triângulo'], ['circular', 'Circular']];
 const DEFAULT_ICON_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
-const DEFAULT_SYMBOL_COLOR: CmykColor = { c: 0, m: 100, y: 100, k: 0 };
+const DEFAULT_SYMBOL_COLOR: CmykColor = { c: 0, m: 100, y: 91, k: 0 }; // NBR 16820 vermelha
 const DEFAULT_TEXT_COLOR: CmykColor = { c: 0, m: 0, y: 0, k: 100 };
 const CMYK_PRESETS: Array<{ name: string; color: CmykColor; hex: string }> = [
   { name: 'Preto',   color: { c: 0,   m: 0,   y: 0,   k: 100 }, hex: '#000000' },
@@ -19,7 +19,7 @@ const CMYK_PRESETS: Array<{ name: string; color: CmykColor; hex: string }> = [
   { name: 'Ciano',   color: { c: 100, m: 0,   y: 0,   k: 0   }, hex: '#00AEEF' },
   { name: 'Verde',   color: { c: 100, m: 0,   y: 100, k: 0   }, hex: '#00A651' },
   { name: 'Amarelo', color: { c: 0,   m: 0,   y: 100, k: 0   }, hex: '#FFF200' },
-  { name: 'Vermelho',color: { c: 0,   m: 100, y: 100, k: 0   }, hex: '#ED1C24' },
+  { name: 'Vermelho',color: { c: 0,   m: 100, y: 91,  k: 0   }, hex: '#E30613' }, // NBR 16820
   { name: 'Magenta', color: { c: 0,   m: 100, y: 0,   k: 0   }, hex: '#EC008C' },
 ];
 const clamp = (n: number) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
