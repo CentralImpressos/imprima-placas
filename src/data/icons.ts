@@ -32,6 +32,7 @@ export const PICTOGRAMAS_DISPONIVEIS = {
   'Avisos / Riscos': [
     { nome: 'Atenção', slug: 'mdi:alert' },
     { nome: 'Risco elétrico (com alerta)', slug: 'mdi:flash-alert' },
+    { nome: 'Risco elétrico', slug: 'mdi:flash' },
     { nome: 'Piso escorregadio', slug: 'mdi:human-handsdown' },
     { nome: 'Cuidado com máquinas', slug: 'mdi:cog' },
     { nome: 'Risco biológico', slug: 'mdi:biohazard' },
