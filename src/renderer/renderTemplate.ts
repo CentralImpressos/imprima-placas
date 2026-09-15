@@ -221,7 +221,7 @@ export function renderTemplate(config: SignRenderConfig): string {
       maxR = maxContentRadius(frameType, w, h, margin, pad, stroke);
     }
 
-    const pictogramBoost = frameType === 'simple' || frameType === 'header' ? 1.2 : 1;
+    const pictogramBoost = frameType === 'header' ? 1.2 : 1;
     const desiredPictSize = (needsRing ? maxR * 2 : maxR * 2 * 0.9) * pictogramBoost;
     const pictSize = Math.min(desiredPictSize, maxR * 2);
 
