@@ -201,7 +201,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     defaults: {
       frameEnabled: true,
       frameColor: DEFAULT_BLACK,
-      backgroundColor: DEFAULT_YELLOW,
+      backgroundColor: DEFAULT_YELLOW_PURE,
       iconColor: DEFAULT_BLACK,
       pictogramPosition: 'top',
     },
@@ -234,7 +234,7 @@ export const SIGN_PRESETS: SignPreset[] = [
       prohibition: false,
       frameColor: DEFAULT_RED,
       backgroundColor: DEFAULT_WHITE,
-      iconColor: DEFAULT_RED,
+      iconColor: DEFAULT_BLACK,
       pictogramPosition: 'top',
     },
   },
