@@ -134,7 +134,7 @@ export const PICTOGRAMAS_DISPONIVEIS = {
     { nome: 'Piscina', slug: 'mdi:pool' },
     { nome: 'Ducha', slug: 'mdi:shower' },
     { nome: 'Animais permitidos', slug: 'mdi:dog' },
-    { nome: 'Coleira obrigatória', slug: 'mdi:leash' }, // NÃO VERIFICADO — confira no popup antes de confiar; se vier em branco, tentar 'mdi:dog-side' como fallback
+    { nome: 'Coleira obrigatória', slug: 'mdi:dog-side' },
     { nome: 'Crianças', slug: 'mdi:account-child' },
     { nome: 'Adulto acompanhando criança', slug: 'mdi:human-male-boy' },
     { nome: 'Área verde', slug: 'mdi:tree' },
