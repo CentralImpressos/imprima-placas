@@ -1,113 +1,104 @@
 // Biblioteca de pictogramas disponíveis no popup de seleção de ícone.
 //
-// Notas importantes de manutenção:
-//
-// 1. O MESMO slug pode aparecer em mais de uma categoria com nomes
-//    diferentes (ex: 'mdi:dog' em "Proibições gerais" e em "Ambiente / Lazer").
-//    Isso é intencional: o SIGNIFICADO da placa (proibido x permitido) vem do
-//    TEMPLATE escolhido (círculo vermelho de proibição, quadrado azul de
-//    obrigação, verde de informação/permissão), não do ícone em si. O MDI não
-//    tem "versões" opostas do mesmo pictograma, então reaproveitamos o glyph.
-//
-// 2. Alguns conceitos não têm um ícone fiel no MDI (biblioteca de uso geral,
-//    não feita para sinalização ISO 7010). Nesses casos, escolhi a melhor
-//    aproximação disponível e deixei um comentário "// aprox.:" explicando
-//    a limitação, em vez de inventar um slug que não existe (o que renderiza
-//    em branco no popup). Se algum dia vocês migrarem pra pictogramas ISO
-//    7010 de verdade (svg custom), esses são os primeiros candidatos a trocar.
-//
-// 3. Todo ícone aqui deve ser conferido visualmente no popup depois de
-//    qualquer edição — um slug com erro de digitação não dá erro de build,
-//    só renderiza vazio.
+// Regra de manutenção: priorizar, nesta ordem, Ultimate Free, Plump Free,
+// Remix Icons e Flex Free. Só manter MDI quando não houver equivalente
+// confiável nessas coleções. Preferir variantes bold/solid para sinalização.
+// Um mesmo glyph não deve ser cadastrado duas vezes na biblioteca.
 
 export const PICTOGRAMAS_DISPONIVEIS = {
   'Trânsito': [
-    { nome: 'Bicicleta', slug: 'mdi:bicycle' },
+    { nome: 'Bicicleta', slug: 'streamline-plump:bicycle-bike-solid' },
     { nome: 'Motocicleta', slug: 'mdi:motorbike' },
-    { nome: 'Caminhão', slug: 'mdi:truck' },
-    { nome: 'Pedestre', slug: 'mdi:walk' },
+    { nome: 'Caminhão', slug: 'streamline-ultimate:truck-2-bold' },
+    { nome: 'Pedestre', slug: 'streamline-ultimate:walking-1-bold' },
     { nome: 'Virar à esquerda', slug: 'mdi:arrow-left-bold' },
-    { nome: 'Virar à direita', slug: 'mdi:arrow-right-bold' },
+    { nome: 'Virar à direita', slug: 'streamline-ultimate:arrow-right-bold' },
     { nome: 'Velocidade', slug: 'mdi:speedometer' },
     { nome: 'Estacionamento (E)', slug: 'mdi:alpha-e' },
-    { nome: 'Vaga acessível', slug: 'mdi:wheelchair' },
-    { nome: 'Estacionamento de bicicleta', slug: 'mdi:bicycle' },
+    { nome: 'Vaga acessível', slug: 'streamline-plump:wheelchair-2-solid' },
   ],
 
   'Proibições gerais': [
-    { nome: 'Cigarro', slug: 'mdi:smoking' },
+    { nome: 'Cigarro', slug: 'streamline-plump:smoking-area-solid' },
     { nome: 'Celular', slug: 'mdi:cellphone' },
     { nome: 'Comida', slug: 'mdi:food' },
     { nome: 'Bebidas', slug: 'mdi:glass-cocktail' },
     { nome: 'Animais', slug: 'mdi:dog' },
     { nome: 'Nadar', slug: 'mdi:swim' },
-    { nome: 'Câmera / Fotografar', slug: 'mdi:camera' },
+    { nome: 'Câmera / Fotografar', slug: 'streamline-plump:camera-1-solid' },
     { nome: 'Sem entrada', slug: 'mdi:cancel' },
     { nome: 'Acesso restrito', slug: 'mdi:shield-outline' },
   ],
 
   'Avisos / Riscos': [
-    { nome: 'Atenção', slug: 'mdi:alert' },
+    { nome: 'Atenção', slug: 'streamline-plump:warning-diamond-solid' },
     { nome: 'Elétrico', slug: 'mdi:flash' },
     { nome: 'Risco elétrico (com alerta)', slug: 'mdi:flash-alert' },
-    { nome: 'Piso escorregadio', slug: 'mdi:human-handsdown' }, // aprox.: MDI não tem "pessoa escorregando"; reaproveita o mesmo glyph de "Queda"
+    { nome: 'Piso escorregadio', slug: 'mdi:human-handsdown' },
     { nome: 'Queda', slug: 'mdi:human-handsdown' },
-    { nome: 'Cuidado com máquinas', slug: 'mdi:cog' }, // aprox.: sem ícone específico de "maquinário industrial" confirmado no MDI
+    { nome: 'Cuidado com máquinas', slug: 'mdi:cog' },
     { nome: 'Risco biológico', slug: 'mdi:biohazard' },
-    { nome: 'Alta temperatura', slug: 'mdi:thermometer-alert' },
+    { nome: 'Alta temperatura', slug: 'streamline-ultimate:temperature-thermometer-high-bold' },
     { nome: 'Cuidado com degrau', slug: 'mdi:stairs' },
     { nome: 'Material inflamável', slug: 'mdi:fire' },
-    { nome: 'Radiação', slug: 'mdi:radioactive' },
-    { nome: 'Cuidado com o cão', slug: 'mdi:dog-side' },
+    { nome: 'Radiação', slug: 'streamline-plump:radioactive-1-solid' },
+    { nome: 'Cuidado com o cão', slug: 'streamline-plump:dog-1-solid' },
     { nome: 'Frágil', slug: 'streamline-ultimate:shipment-crack-bold' },
     { nome: 'Proteger contra Umidade', slug: 'streamline-plump:box-waterproof-solid' },
+    { nome: 'Este Lado para Cima', slug: 'streamline-ultimate:arrow-button-up-bold' },
+    { nome: 'Centro de Gravidade', slug: 'streamline-plump:3d-coordinate-axis-solid' },
+    { nome: 'Superfície Quente / Queimadura', slug: 'streamline-ultimate:temperature-thermometer-high-bold' },
+    { nome: 'Risco de Esmagamento (Prensa)', slug: 'mdi:arrow-collapse-horizontal' },
     { nome: 'Empilhadeira', slug: 'mdi:forklift' },
-    { nome: 'Risco de corte', slug: 'mdi:content-cut' },
+    { nome: 'Risco de corte', slug: 'streamline-plump:cut-solid' },
     { nome: 'Risco de explosão', slug: 'mdi:bomb' },
     { nome: 'Gás', slug: 'mdi:gas-cylinder' },
     { nome: 'Perigo químico', slug: 'mdi:flask' },
     { nome: 'Piso irregular', slug: 'mdi:terrain' },
     { nome: 'Área molhada', slug: 'mdi:water-alert' },
+    { nome: 'Risco de molhar', slug: 'streamline-ultimate:rain-umbrella-1-bold' },
     { nome: 'Carga suspensa', slug: 'mdi:crane' },
   ],
 
   'Obrigações / EPI': [
     { nome: 'Use máscara', slug: 'mdi:face-mask' },
     { nome: 'Use capacete', slug: 'mdi:hard-hat' },
-    { nome: 'Use luvas', slug: 'mdi:hand-back-left' }, // aprox.: MDI não tem ícone específico de luva
+    { nome: 'Use luvas', slug: 'mdi:hand-back-left' },
     { nome: 'Use óculos de proteção', slug: 'mdi:safety-goggles' },
     { nome: 'Use cinto de segurança', slug: 'mdi:seatbelt' },
-    { nome: 'Lave as mãos', slug: 'mdi:hand-wash' },
+    { nome: 'Lave as mãos', slug: 'streamline-ultimate:laundry-hand-wash-bold' },
     { nome: 'Mantenha distância', slug: 'mdi:human-greeting-proximity' },
     { nome: 'Use protetor auricular', slug: 'mdi:ear-hearing' },
-    { nome: 'Use calçado de segurança', slug: 'mdi:shoe-print' }, // aprox.: MDI não tem "bota industrial"; pegada é o mais neutro disponível
+    { nome: 'Use calçado de segurança', slug: 'mdi:shoe-print' },
     { nome: 'Obrigatório', slug: 'mdi:check-circle' },
     { nome: 'Use respirador', slug: 'mdi:air-filter' },
-    // 'Use colete de segurança' foi removido: não existe ícone de colete no
-    // MDI e todas as aproximações testadas (mdi:human, mdi:tshirt-crew) não
-    // comunicam a mensagem. Recomendo um SVG customizado se esse item for
-    // essencial pro catálogo.
   ],
 
   'Emergência / Rotas': [
     { nome: 'Extintor', slug: 'mdi:fire-extinguisher' },
     { nome: 'Saída de emergência', slug: 'mdi:exit-run' },
     { nome: 'Primeiros socorros', slug: 'mdi:medical-bag' },
+    { nome: 'Maca de Resgate / Médico', slug: 'streamline-ultimate:medical-instrument-ambulance-bed-bold' },
     { nome: 'Rota de evacuação', slug: 'mdi:directions-fork' },
     { nome: 'Ponto de encontro', slug: 'mdi:map-marker-radius' },
+    { nome: 'Área de Refúgio / Ponto de Resgate', slug: 'streamline-ultimate:safety-911-bold' },
     { nome: 'Alarme de incêndio', slug: 'mdi:fire-alert' },
+    { nome: 'Alarme Manual / Acionador', slug: 'streamline-ultimate:alarm-bell-ring-bold' },
     { nome: 'Hidrante', slug: 'mdi:fire-hydrant' },
     { nome: 'Telefone de emergência', slug: 'mdi:phone-alert' },
     { nome: 'Desfibrilador', slug: 'mdi:heart-flash' },
     { nome: 'Chuveiro de emergência', slug: 'mdi:shower' },
     { nome: 'Lava-olhos', slug: 'mdi:eye-outline' },
     { nome: 'Porta corta-fogo', slug: 'mdi:door' },
-    { nome: 'Alarme', slug: 'mdi:alarm-light' },
+    { nome: 'Alarme', slug: 'streamline-ultimate:alarm-bell-ring-bold' },
   ],
 
   'Sinalização / Utilidades': [
     { nome: 'Câmera de segurança', slug: 'mdi:cctv' },
-    { nome: 'Acessibilidade', slug: 'mdi:wheelchair' },
+    { nome: 'Acessibilidade', slug: 'streamline-ultimate:a11y-accessibility-disability-bold' },
+    { nome: 'Deficiência Auditiva / Leitura Labial', slug: 'streamline-ultimate:hearing-disability-bold' },
+    { nome: 'Intérprete de Libras', slug: 'ri:sign-language-fill' },
+    { nome: 'Cão-Guia / Assistência', slug: 'mdi:dog' },
     { nome: 'Banheiro', slug: 'mdi:toilet' },
     { nome: 'Banheiro masculino', slug: 'mdi:human-male' },
     { nome: 'Banheiro feminino', slug: 'mdi:human-female' },
@@ -115,17 +106,17 @@ export const PICTOGRAMAS_DISPONIVEIS = {
     { nome: 'Lixeira', slug: 'mdi:trash-can-outline' },
     { nome: 'Reciclagem', slug: 'mdi:recycle' },
     { nome: 'Elevador', slug: 'mdi:elevator' },
-    { nome: 'Escada (localização)', slug: 'mdi:stairs' },
+    { nome: 'Escada (localização)', slug: 'streamline-ultimate:stairs-descend-bold' },
     { nome: 'Escada rolante', slug: 'mdi:escalator' },
     { nome: 'Wi-Fi', slug: 'mdi:wifi' },
     { nome: 'Bebedouro', slug: 'mdi:cup-water' },
     { nome: 'Informações', slug: 'mdi:information' },
     { nome: 'Recepção', slug: 'mdi:desk' },
     { nome: 'Entrada', slug: 'mdi:door-open' },
-    { nome: 'Seta para cima', slug: 'mdi:arrow-up-bold' },
-    { nome: 'Seta para baixo', slug: 'mdi:arrow-down-bold' },
+    { nome: 'Seta para cima', slug: 'streamline-ultimate:arrow-button-up-bold' },
+    { nome: 'Seta para baixo', slug: 'streamline-ultimate:arrow-down-2-bold' },
     { nome: 'Seta para esquerda', slug: 'mdi:arrow-left-bold' },
-    { nome: 'Seta para direita', slug: 'mdi:arrow-right-bold' },
+    { nome: 'Seta para direita', slug: 'streamline-ultimate:arrow-right-bold' },
   ],
 
   'Ambiente / Lazer': [
