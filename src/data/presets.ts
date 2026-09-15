@@ -2,10 +2,10 @@ import type { SignPreset } from '../types';
 
 export const DEFAULT_FRAME_COLOR = { c: 0, m: 0, y: 0, k: 100 };
 export const DEFAULT_BLUE = { c: 100, m: 70, y: 0, k: 0 };
-export const DEFAULT_RED = { c: 0, m: 100, y: 100, k: 0 };
-export const DEFAULT_YELLOW = { c: 0, m: 15, y: 100, k: 0 };
-export const DEFAULT_YELLOW_PURE = { c: 0, m: 0, y: 100, k: 0 };
-export const DEFAULT_GREEN = { c: 100, m: 0, y: 100, k: 0 };
+export const DEFAULT_RED = { c: 0, m: 100, y: 91, k: 0 };
+export const DEFAULT_YELLOW = { c: 0, m: 10, y: 100, k: 0 };
+export const DEFAULT_YELLOW_PURE = DEFAULT_YELLOW;
+export const DEFAULT_GREEN = { c: 79, m: 0, y: 87, k: 76 };
 export const DEFAULT_BLACK = { c: 0, m: 0, y: 0, k: 100 };
 export const DEFAULT_WHITE = { c: 0, m: 0, y: 0, k: 0 };
 export const DEFAULT_BROWN = { c: 30, m: 60, y: 80, k: 35 };
@@ -78,7 +78,6 @@ export const SIGN_PRESETS: SignPreset[] = [
     icon: 'mdi:speedometer',
     defaults: { frameColor: DEFAULT_BLUE, pictogramPosition: 'top' },
   },
-  // ——— Coleta seletiva / recicláveis (modelo cabeçalho) ———
   {
     id: 'reciclavel',
     name: 'Reciclável',
@@ -137,9 +136,9 @@ export const SIGN_PRESETS: SignPreset[] = [
     defaults: {
       circle: false,
       prohibition: false,
-      frameColor: DEFAULT_YELLOW_PURE,
+      frameColor: DEFAULT_YELLOW,
       backgroundColor: DEFAULT_WHITE,
-      iconColor: DEFAULT_YELLOW_PURE,
+      iconColor: DEFAULT_YELLOW,
       pictogramPosition: 'top',
     },
   },
@@ -201,7 +200,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     defaults: {
       frameEnabled: true,
       frameColor: DEFAULT_BLACK,
-      backgroundColor: DEFAULT_YELLOW_PURE,
+      backgroundColor: DEFAULT_YELLOW,
       iconColor: DEFAULT_BLACK,
       pictogramPosition: 'top',
     },
@@ -217,7 +216,7 @@ export const SIGN_PRESETS: SignPreset[] = [
       circle: false,
       prohibition: false,
       frameColor: DEFAULT_BLACK,
-      backgroundColor: DEFAULT_YELLOW_PURE,
+      backgroundColor: DEFAULT_YELLOW,
       iconColor: DEFAULT_BLACK,
       pictogramPosition: 'top',
     },
