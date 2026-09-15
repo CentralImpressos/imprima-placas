@@ -100,7 +100,6 @@ export const PICTOGRAMAS_DISPONIVEIS = {
     { nome: 'Lixeira', slug: 'mdi:trash-can-outline' },
     { nome: 'Reciclagem', slug: 'mdi:recycle' },
     { nome: 'Elevador', slug: 'mdi:elevator' },
-    { nome: 'Escada (localização)', slug: 'mdi:stairs' },
     { nome: 'Escada rolante', slug: 'mdi:escalator' },
     { nome: 'Wi-Fi', slug: 'mdi:wifi' },
     { nome: 'Bebedouro', slug: 'mdi:cup-water' },
