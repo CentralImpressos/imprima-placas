@@ -17,7 +17,7 @@ export const SIGN_PRESETS: SignPreset[] = [
     name: 'Proibido Fumar',
     frameType: 'simple',
     message: 'PROIBIDO\nFUMAR',
-    icon: 'mdi:smoking',
+    icon: 'streamline-plump:smoking-area-solid',
     defaults: { circle: true, prohibition: true, frameColor: DEFAULT_FRAME_COLOR, pictogramPosition: 'top' },
   },
   {
